@@ -1,0 +1,17 @@
+{
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules/", "dist"],
+    "compilerOptions": {
+        "baseUrl": "src",
+        "allowSyntheticDefaultImports": true,
+        "target": "ES2022",
+        "moduleResolution": "Node",
+        "outDir": "dist",
+        "declaration": true,
+        "esModuleInterop": true,
+        "strict": true,
+        "allowJs": false,
+        "resolveJsonModule": true,
+        "inlineSourceMap": false
+    }
+}

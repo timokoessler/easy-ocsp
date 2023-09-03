@@ -1,0 +1,7 @@
+.npm
+node_modules/
+*.log
+*.gz
+*.tgz
+coverage/
+dist

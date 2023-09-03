@@ -1,0 +1,15 @@
+.gitignore
+test/
+.git_hooks/
+coverage/
+.eslintrc.js
+tsconfig.json
+.github/
+.eslintignore
+src/
+tsup.config.ts
+jest.config.js
+examples/
+*.tgz
+.prettierrc.mjs
+.prettieriignore
