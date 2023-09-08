@@ -1,7 +1,6 @@
 import * as pkijs from 'pkijs';
 import { fromBER } from 'asn1js';
 import { X509Certificate } from 'crypto';
-import type { SupportedCertType } from './index';
 
 export function pemToCert(pem: string) {
     const base64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
@@ -14,7 +13,7 @@ export function derToCert(der: Buffer) {
     return pkijs.Certificate.fromBER(der);
 }
 
-export function convertToPkijsCert(cert: SupportedCertType) {
+export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pkijs.Certificate) {
     if (typeof cert === 'string') {
         return pemToCert(cert);
     } else if (cert instanceof X509Certificate) {

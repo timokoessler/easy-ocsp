@@ -4,9 +4,22 @@ import { convertToPkijsCert, derToCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
 import { getCertificateByHost } from './tls';
 
-export type SupportedCertType = string | Buffer | X509Certificate | pkijs.Certificate;
+export type OCSPStatusConfig = {
+    /**
+     * The certificate that signs the OCSP response. If not provided, it will be downloaded if possible.
+     */
+    ca?: string | Buffer | X509Certificate | pkijs.Certificate;
+    /**
+     * The URL of the OCSP responder. By default, it will be extracted from the certificate.
+     */
+    ocspUrl?: string;
+    /**
+     * Whether to validate the signature of the OCSP response. Defaults to true.
+     */
+    validateSignature?: boolean;
+};
 
-async function downloadIssuerCert(cert: SupportedCertType): Promise<Buffer> {
+async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkijs.Certificate): Promise<Buffer> {
     const { issuerUrl } = getCAInfoUrls(convertToPkijsCert(cert));
     const res = await fetch(issuerUrl);
     if (!res.ok) {
@@ -15,22 +28,28 @@ async function downloadIssuerCert(cert: SupportedCertType): Promise<Buffer> {
     return Buffer.from(await res.arrayBuffer());
 }
 
+const defaultConfig: OCSPStatusConfig = {
+    validateSignature: true,
+};
+
 /**
  * Get the status of a certificate
  * @param cert string | Buffer | X509Certificate | pkijs.Certificate
- * @param issuerCert string | Buffer | X509Certificate | pkijs.Certificate
- * @returns 0 = good, 1 = revoked, 2 = unknown
+ * @param config Provide optional additional configuration
+ * @returns Revocation status of the certificate and additional information if available
+ * @throws Error if the OCSP request failed
  */
-export async function getCertStatus(cert: SupportedCertType, issuerCert?: SupportedCertType) {
+export async function getCertStatus(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
+    config = { ...defaultConfig, ...config };
     const certificate = convertToPkijsCert(cert);
     let issuerCertificate: pkijs.Certificate;
-    if (!issuerCert) {
+    if (!config.ca) {
         issuerCertificate = derToCert(await downloadIssuerCert(certificate));
     } else {
-        issuerCertificate = convertToPkijsCert(issuerCert);
+        issuerCertificate = convertToPkijsCert(config.ca);
     }
 
-    const { ocspUrl } = getCAInfoUrls(certificate);
+    const ocspUrl = config.ocspUrl ? config.ocspUrl : getCAInfoUrls(certificate).ocspUrl;
     const ocspRequestBody = await buildOCSPRequest(certificate, issuerCertificate);
 
     const res = await fetch(ocspUrl, {
@@ -42,12 +61,29 @@ export async function getCertStatus(cert: SupportedCertType, issuerCert?: Suppor
     });
 
     if (!res.ok) {
-        throw new Error(`OCSP request failed with status ${res.status} ${res.statusText}`);
+        throw new Error(`OCSP request failed with http status ${res.status} ${res.statusText}`);
     }
-    const responseData = Buffer.from(await res.arrayBuffer());
-    return parseOCSPResponse(responseData, certificate, issuerCertificate);
+
+    return parseOCSPResponse(Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate);
 }
 
-export async function getCertStatusByDomain(domain: string) {
-    return getCertStatus(await getCertificateByHost(domain));
+/**
+ *
+ * @param domain Domain to check the certificate for (e.g. 'github.com')
+ * @param config Provide optional additional configuration
+ * @returns Revocation status of the certificate and additional information if available
+ * @throws Error if the certificate could not be retrieved or the OCSP request failed
+ */
+export async function getCertStatusByDomain(domain: string, config?: OCSPStatusConfig) {
+    return getCertStatus(await getCertificateByHost(domain), config);
+}
+
+/**
+ * Get the OCSP and issuer URLs from a certificate
+ * @param cert string | Buffer | X509Certificate | pkijs.Certificate
+ * @returns OCSP and issuer URLs
+ * @throws Error if the certificate does not contain the required information
+ */
+export async function getCertURLs(cert: string | Buffer | X509Certificate | pkijs.Certificate): Promise<{ ocspUrl: string; issuerUrl: string }> {
+    return getCAInfoUrls(convertToPkijsCert(cert));
 }
