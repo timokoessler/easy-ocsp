@@ -1,5 +1,10 @@
 import { connect as tlsConnect, TLSSocket, ConnectionOptions } from 'tls';
 
+/**
+ * Get TLS certificate by hostname (port 443)
+ * @param hostname
+ * @returns Buffer containing the raw certificate
+ */
 export function getCertificateByHost(hostname: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         const options: ConnectionOptions = {

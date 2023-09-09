@@ -12,7 +12,7 @@ beforeAll(async () => {
 test('Check revoked Lets Encrypt cert', async () => {
     const result = await getCertStatus(cert);
     expect(result.status).toBe('revoked');
-    expect(result.revocationTime?.getTime()).toBe(1694009650000);
+    expect(result.revocationTime?.getTime()).toBe(1694016850000);
 });
 
 test('Get OCSP and issuer URLs', async () => {
@@ -34,7 +34,7 @@ test('Set ocsp url manually', async () => {
         ocspUrl: 'http://stg-r3.o.lencr.org',
     });
     expect(result.status).toBe('revoked');
-    expect(result.revocationTime?.getTime()).toBe(1694009650000);
+    expect(result.revocationTime?.getTime()).toBe(1694016850000);
 });
 
 test('Set ca manually', async () => {
@@ -42,5 +42,5 @@ test('Set ca manually', async () => {
         ca: intermediateCA,
     });
     expect(result.status).toBe('revoked');
-    expect(result.revocationTime?.getTime()).toBe(1694009650000);
+    expect(result.revocationTime?.getTime()).toBe(1694016850000);
 });

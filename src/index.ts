@@ -1,6 +1,6 @@
 import { X509Certificate } from 'node:crypto';
 import * as pkijs from 'pkijs';
-import { convertToPkijsCert, derToCert } from './convert';
+import { convertToPkijsCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
 import { getCertificateByHost } from './tls';
 
@@ -44,7 +44,7 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
     const certificate = convertToPkijsCert(cert);
     let issuerCertificate: pkijs.Certificate;
     if (!config.ca) {
-        issuerCertificate = derToCert(await downloadIssuerCert(certificate));
+        issuerCertificate = convertToPkijsCert(await downloadIssuerCert(certificate));
     } else {
         issuerCertificate = convertToPkijsCert(config.ca);
     }
@@ -64,7 +64,7 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
         throw new Error(`OCSP request failed with http status ${res.status} ${res.statusText}`);
     }
 
-    return parseOCSPResponse(Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate);
+    return parseOCSPResponse(Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate, config);
 }
 
 /**
@@ -84,6 +84,10 @@ export async function getCertStatusByDomain(domain: string, config?: OCSPStatusC
  * @returns OCSP and issuer URLs
  * @throws Error if the certificate does not contain the required information
  */
-export async function getCertURLs(cert: string | Buffer | X509Certificate | pkijs.Certificate): Promise<{ ocspUrl: string; issuerUrl: string }> {
+export async function getCertURLs(
+    cert: string | Buffer | X509Certificate | pkijs.Certificate,
+): Promise<{ ocspUrl: string; issuerUrl: string }> {
     return getCAInfoUrls(convertToPkijsCert(cert));
 }
+
+export { getCertificateByHost };

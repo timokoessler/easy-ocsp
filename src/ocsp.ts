@@ -1,6 +1,7 @@
 import { webcrypto } from 'node:crypto';
-import { GeneralizedTime, OctetString } from 'asn1js';
+import { GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
+import { OCSPStatusConfig } from 'index';
 
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
@@ -9,15 +10,6 @@ pkijs.setEngine('crypto', cryptoEngine);
 
 export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkijs.Certificate) {
     const ocspReq = new pkijs.OCSPRequest();
-
-    if (!Array.isArray(cert.extensions)) {
-        throw new Error('Certificate does not contain extensions');
-    }
-
-    const authorityKeyIdentifier = cert.extensions.find((ext) => ext.extnID === '2.5.29.35');
-    if (!authorityKeyIdentifier) {
-        throw new Error('Certificate does not contain authority key identifier extension');
-    }
 
     await ocspReq.createForCertificate(cert, {
         hashAlgorithm: 'SHA-1',
@@ -39,21 +31,23 @@ type AccessDescription = { accessMethod: string; accessLocation: { type: number;
 
 export function getCAInfoUrls(cert: pkijs.Certificate) {
     if (!cert.extensions) {
-        throw new Error('Certificate does not contain extensions');
+        throw new Error('Certificate does not contain any extensions');
     }
-    const authorityInformationAccessExtension = cert.extensions.find((ext) => ext.extnID === '1.3.6.1.5.5.7.1.1');
+    const authorityInfoAccessExtension = cert.extensions.find((ext) => ext.extnID === '1.3.6.1.5.5.7.1.1');
     if (
-        !authorityInformationAccessExtension ||
-        !authorityInformationAccessExtension.parsedValue ||
-        !authorityInformationAccessExtension.parsedValue.accessDescriptions
+        !authorityInfoAccessExtension ||
+        !authorityInfoAccessExtension.parsedValue ||
+        !authorityInfoAccessExtension.parsedValue.accessDescriptions
     ) {
         throw new Error('Certificate does not contain authority information access extension');
     }
-    const ocsp = authorityInformationAccessExtension.parsedValue.accessDescriptions.find((ext: AccessDescription) => ext.accessMethod === '1.3.6.1.5.5.7.48.1');
+    const ocsp = authorityInfoAccessExtension.parsedValue.accessDescriptions.find(
+        (ext: AccessDescription) => ext.accessMethod === '1.3.6.1.5.5.7.48.1',
+    );
     if (!ocsp || !ocsp.accessLocation || !ocsp.accessLocation.value) {
         throw new Error('Certificate does not contain OCSP url');
     }
-    const issuer = authorityInformationAccessExtension.parsedValue.accessDescriptions.find(
+    const issuer = authorityInfoAccessExtension.parsedValue.accessDescriptions.find(
         (ext: AccessDescription) => ext.accessMethod === '1.3.6.1.5.5.7.48.2',
     );
     if (!issuer || !issuer.accessLocation || !issuer.accessLocation.value) {
@@ -79,7 +73,12 @@ function statusToString(status: number) {
     }
 }
 
-export async function parseOCSPResponse(responseData: Buffer, certificate: pkijs.Certificate, issuerCertificate: pkijs.Certificate) {
+export async function parseOCSPResponse(
+    responseData: Buffer,
+    certificate: pkijs.Certificate,
+    issuerCertificate: pkijs.Certificate,
+    config: OCSPStatusConfig,
+) {
     const ocspResponse = pkijs.OCSPResponse.fromBER(responseData);
 
     const responseCode = ocspResponse.responseStatus.valueBlock.valueDec;
@@ -109,9 +108,11 @@ export async function parseOCSPResponse(responseData: Buffer, certificate: pkijs
     }
 
     const basicResponse = pkijs.BasicOCSPResponse.fromBER(ocspResponse.responseBytes.response.valueBlock.valueHexView);
-    const validSignature = await verifySignature(basicResponse, issuerCertificate);
-    if (!validSignature) {
-        throw new Error('OCSP response signature verification failed');
+
+    if (config.validateSignature) {
+        if (!(await verifySignature(basicResponse, issuerCertificate))) {
+            throw new Error('OCSP response signature verification failed');
+        }
     }
 
     if (basicResponse.tbsResponseData.responses.length !== 1) {
@@ -133,18 +134,11 @@ export async function parseOCSPResponse(responseData: Buffer, certificate: pkijs
     if (status.status === 1 && Array.isArray(basicResponse.tbsResponseData.responses[0]?.certStatus?.valueBlock?.value)) {
         for (const v of basicResponse.tbsResponseData.responses[0].certStatus.valueBlock.value) {
             if (v instanceof GeneralizedTime) {
-                const keys = ['year', 'month', 'day', 'hour', 'minute', 'second', 'millisecond'];
-                let valid = true;
-                for (const key of keys) {
-                    // eslint-disable-next-line security/detect-object-injection
-                    if (typeof v[key as keyof GeneralizedTime] !== 'number') {
-                        valid = false;
-                        break;
-                    }
-                }
-                if (valid) {
-                    result.revocationTime = new Date(v.year, v.month - 1, v.day, v.hour, v.minute, v.second, v.millisecond);
-                }
+                result.revocationTime = v.toDate();
+                break;
+            }
+            if (v instanceof UTCTime) {
+                result.revocationTime = v.toDate();
                 break;
             }
         }
@@ -153,34 +147,68 @@ export async function parseOCSPResponse(responseData: Buffer, certificate: pkijs
 }
 
 async function verifySignature(basicOcspResponse: pkijs.BasicOCSPResponse, trustedCert: pkijs.Certificate) {
+    let signatureCert: pkijs.Certificate | null = null;
+
     if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
-        if (!trustedCert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
-            throw new Error('Responder ID does not match to trusted certificate');
+        if (trustedCert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
+            signatureCert = trustedCert;
         }
     } else if (basicOcspResponse.tbsResponseData.responderID instanceof OctetString) {
-        const hash = await webcrypto.subtle.digest({ name: 'sha-1' }, trustedCert.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView);
-        if (Buffer.compare(Buffer.from(hash), basicOcspResponse.tbsResponseData.responderID.valueBlock.valueHexView) !== 0) {
-            throw new Error('Responder ID does not match to trusted certificate');
+        const hash = await webcrypto.subtle.digest(
+            { name: 'sha-1' },
+            trustedCert.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView,
+        );
+        if (Buffer.compare(Buffer.from(hash), basicOcspResponse.tbsResponseData.responderID.valueBlock.valueHexView) === 0) {
+            signatureCert = trustedCert;
         }
     } else {
         throw new Error('Responder ID is unknown');
     }
-    /* const certChain = new CertificateChainValidationEngine({
-        certs: additionalCerts,
-        trustedCerts,
-    });
-    const verificationResult = await certChain.verify({}, crypto);
-    if (!verificationResult.result) {
-        throw new Error("Validation of signer's certificate failed");
-    } */
+
     const cryptoEngine = pkijs.getEngine();
     if (!cryptoEngine || !cryptoEngine.crypto) {
         throw new Error('No crypto engine');
     }
+
+    if (!signatureCert) {
+        if (!Array.isArray(basicOcspResponse.certs) || !basicOcspResponse.certs.length) {
+            throw new Error('OCSP response is not signed by trusted certificate and does not contain additional certificates');
+        }
+        for (const cert of basicOcspResponse.certs) {
+            if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
+                if (cert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
+                    signatureCert = cert;
+                    break;
+                }
+            } else if (basicOcspResponse.tbsResponseData.responderID instanceof OctetString) {
+                const hash = await webcrypto.subtle.digest(
+                    { name: 'sha-1' },
+                    cert.subjectPublicKeyInfo.subjectPublicKey.valueBlock.valueHexView,
+                );
+                if (Buffer.compare(Buffer.from(hash), basicOcspResponse.tbsResponseData.responderID.valueBlock.valueHexView) === 0) {
+                    signatureCert = cert;
+                }
+            }
+        }
+
+        if (!signatureCert) {
+            throw new Error('OCSP response is not signed by trusted certificate or additional response certificates');
+        }
+
+        const chain = new pkijs.CertificateChainValidationEngine({
+            certs: basicOcspResponse.certs,
+            trustedCerts: [trustedCert],
+        });
+        const verificationResult = await chain.verify({}, cryptoEngine.crypto);
+        if (!verificationResult.result) {
+            throw new Error('Validation of OCSP response certificate chain failed');
+        }
+    }
+
     return cryptoEngine.crypto.verifyWithPublicKey(
         basicOcspResponse.tbsResponseData.tbsView,
         basicOcspResponse.signature,
-        trustedCert.subjectPublicKeyInfo,
+        signatureCert!.subjectPublicKeyInfo,
         basicOcspResponse.signatureAlgorithm,
     );
 }

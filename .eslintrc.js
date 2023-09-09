@@ -5,7 +5,12 @@ module.exports = {
     env: {
         node: true,
     },
-    extends: ['eslint:recommended', 'plugin:@typescript-eslint/eslint-recommended', 'plugin:@typescript-eslint/recommended', 'plugin:security/recommended'],
+    extends: [
+        'eslint:recommended',
+        'plugin:@typescript-eslint/eslint-recommended',
+        'plugin:@typescript-eslint/recommended',
+        'plugin:security/recommended',
+    ],
     rules: {
         indent: ['off', 'tab'],
         quotes: ['warn', 'single'],
