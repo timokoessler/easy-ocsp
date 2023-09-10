@@ -4,6 +4,8 @@
 
 EasyOCSP is an easy-to-use OCSP client for Node.js that can be used to check the revocation status of X.509 TLS certificates using the Online Certificate Status Protocol (OCSP). Its based on PKI.js but provides a much simpler API and additional features like OCSP nonce verification (RFC 8954).
 
+A complete documentation can be found at [ocsp.tkoessler.de](https://ocsp.tkoessler.de).
+
 ## Getting started
 
 You can install EasyOCSP using npm:
