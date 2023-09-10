@@ -1,7 +1,7 @@
 import { webcrypto } from 'node:crypto';
 import { GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
-import { OCSPStatusConfig } from 'index';
+import { OCSPStatusConfig, OCSPStatusResponse } from './index';
 
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
@@ -16,15 +16,18 @@ export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkij
         issuerCertificate: issuerCert,
     });
 
-    const nonce = pkijs.getRandomValues(new Uint8Array(10));
+    const nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(10)) }).toBER();
     ocspReq.tbsRequest.requestExtensions = [
         new pkijs.Extension({
             extnID: '1.3.6.1.5.5.7.48.1.2', // nonce
-            extnValue: new OctetString({ valueHex: nonce.buffer }).toBER(),
+            extnValue: nonce,
         }),
     ];
 
-    return ocspReq.toSchema(true).toBER();
+    return {
+        ocspReq: ocspReq.toSchema(true).toBER(),
+        nonce,
+    };
 }
 
 type AccessDescription = { accessMethod: string; accessLocation: { type: number; value: string } };
@@ -60,24 +63,12 @@ export function getCAInfoUrls(cert: pkijs.Certificate) {
     };
 }
 
-function statusToString(status: number) {
-    switch (status) {
-        case 0:
-            return 'good';
-        case 1:
-            return 'revoked';
-        case 2:
-            return 'unknown';
-        default:
-            throw new Error('Unknown certificate status');
-    }
-}
-
 export async function parseOCSPResponse(
     responseData: Buffer,
     certificate: pkijs.Certificate,
     issuerCertificate: pkijs.Certificate,
     config: OCSPStatusConfig,
+    nonce: ArrayBuffer,
 ) {
     const ocspResponse = pkijs.OCSPResponse.fromBER(responseData);
 
@@ -108,30 +99,81 @@ export async function parseOCSPResponse(
     }
 
     const basicResponse = pkijs.BasicOCSPResponse.fromBER(ocspResponse.responseBytes.response.valueBlock.valueHexView);
-
-    if (config.validateSignature) {
-        if (!(await verifySignature(basicResponse, issuerCertificate))) {
-            throw new Error('OCSP response signature verification failed');
-        }
+    if (!Array.isArray(basicResponse.tbsResponseData.responses)) {
+        throw new Error('OCSP response does not contain any response data');
     }
 
     if (basicResponse.tbsResponseData.responses.length !== 1) {
         throw new Error('OCSP response does not contain exactly one response');
     }
 
-    const status = await ocspResponse.getCertificateStatus(certificate, issuerCertificate);
-    if (!status.isForCertificate) {
-        throw new Error('OCSP response does not contain status for correct certificate');
+    if (!(basicResponse.tbsResponseData.responses[0] instanceof pkijs.SingleResponse)) {
+        throw new Error('OCSP response is not a pkijs.SingleResponse');
     }
 
-    const result: {
-        status: 'good' | 'revoked' | 'unknown';
-        revocationTime?: Date;
-    } = {
-        status: statusToString(status.status),
+    const cryptoEngine = pkijs.getEngine();
+    if (!cryptoEngine || !cryptoEngine.crypto) {
+        throw new Error('No pkijs crypto engine');
+    }
+
+    if (config.validateSignature) {
+        if (!(await verifySignature(basicResponse, issuerCertificate, nonce, cryptoEngine))) {
+            throw new Error('OCSP response signature verification failed');
+        }
+    }
+
+    const singleResponse = basicResponse.tbsResponseData.responses[0];
+
+    const hashAlgorithm = cryptoEngine.crypto.getAlgorithmByOID(
+        singleResponse.certID.hashAlgorithm.algorithmId,
+        true,
+        'CertID.hashAlgorithm',
+    );
+
+    const certID = new pkijs.CertID();
+    await certID.createForCertificate(
+        certificate,
+        {
+            hashAlgorithm: hashAlgorithm.name,
+            issuerCertificate,
+        },
+        cryptoEngine.crypto,
+    );
+
+    if (!singleResponse.certID.isEqual(certID)) {
+        throw new Error('OCSP response does not match certificate');
+    }
+
+    let status: 'good' | 'revoked' | 'unknown' = 'unknown';
+
+    if (singleResponse.certStatus.idBlock.isConstructed) {
+        if (singleResponse.certStatus.idBlock.tagNumber === 1) {
+            status = 'revoked';
+        }
+    } else {
+        if (singleResponse.certStatus.idBlock.tagNumber === 0) {
+            status = 'good';
+        }
+    }
+
+    const result: OCSPStatusResponse = {
+        status: status,
+        ocspUrl: config.ocspUrl as string,
     };
 
-    if (status.status === 1 && Array.isArray(basicResponse.tbsResponseData.responses[0]?.certStatus?.valueBlock?.value)) {
+    if (basicResponse.tbsResponseData.producedAt instanceof Date) {
+        result.producedAt = basicResponse.tbsResponseData.producedAt;
+    }
+
+    if (singleResponse.nextUpdate instanceof Date) {
+        result.nextUpdate = singleResponse.nextUpdate;
+    }
+
+    if (singleResponse.thisUpdate instanceof Date) {
+        result.thisUpdate = singleResponse.thisUpdate;
+    }
+
+    if (status === 'revoked' && Array.isArray(singleResponse.certStatus?.valueBlock?.value)) {
         for (const v of basicResponse.tbsResponseData.responses[0].certStatus.valueBlock.value) {
             if (v instanceof GeneralizedTime) {
                 result.revocationTime = v.toDate();
@@ -146,8 +188,17 @@ export async function parseOCSPResponse(
     return result;
 }
 
-async function verifySignature(basicOcspResponse: pkijs.BasicOCSPResponse, trustedCert: pkijs.Certificate) {
+async function verifySignature(
+    basicOcspResponse: pkijs.BasicOCSPResponse,
+    trustedCert: pkijs.Certificate,
+    nonce: ArrayBuffer,
+    cryptoEngine = pkijs.getEngine(),
+) {
     let signatureCert: pkijs.Certificate | null = null;
+
+    if (!cryptoEngine || !cryptoEngine.crypto) {
+        throw new Error('No pkijs crypto engine');
+    }
 
     if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
         if (trustedCert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
@@ -163,11 +214,6 @@ async function verifySignature(basicOcspResponse: pkijs.BasicOCSPResponse, trust
         }
     } else {
         throw new Error('Responder ID is unknown');
-    }
-
-    const cryptoEngine = pkijs.getEngine();
-    if (!cryptoEngine || !cryptoEngine.crypto) {
-        throw new Error('No crypto engine');
     }
 
     if (!signatureCert) {
@@ -202,6 +248,14 @@ async function verifySignature(basicOcspResponse: pkijs.BasicOCSPResponse, trust
         const verificationResult = await chain.verify({}, cryptoEngine.crypto);
         if (!verificationResult.result) {
             throw new Error('Validation of OCSP response certificate chain failed');
+        }
+    }
+
+    // RFC 8954
+    if (Array.isArray(basicOcspResponse.tbsResponseData.responseExtensions)) {
+        const nonceExtension = basicOcspResponse.tbsResponseData.responseExtensions.find((e) => e.extnID === '1.3.6.1.5.5.7.48.1.2');
+        if (nonceExtension && Buffer.compare(Buffer.from(nonce), nonceExtension.extnValue.valueBlock.valueHexView) !== 0) {
+            throw new Error('OCSP response nonce does not match request nonce');
         }
     }
 

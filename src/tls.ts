@@ -1,9 +1,9 @@
-import { connect as tlsConnect, TLSSocket, ConnectionOptions } from 'tls';
+import { connect as tlsConnect, TLSSocket, ConnectionOptions } from 'node:tls';
 
 /**
- * Get TLS certificate by hostname (port 443)
- * @param hostname
- * @returns Buffer containing the raw certificate
+ * Get a TLS certificate by hostname. This function will always connect to port 443.
+ * @param hostname Hostname to connect to (e.g. 'github.com')
+ * @returns Buffer containing the raw certificate (DER)
  */
 export function getCertificateByHost(hostname: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -11,6 +11,7 @@ export function getCertificateByHost(hostname: string): Promise<Buffer> {
             port: 443,
             host: hostname,
             servername: hostname,
+            timeout: 3000,
         };
         const socket: TLSSocket = tlsConnect(options, () => {
             const cert = socket.getPeerCertificate();

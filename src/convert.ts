@@ -1,6 +1,6 @@
 import * as pkijs from 'pkijs';
 import { fromBER } from 'asn1js';
-import { X509Certificate } from 'crypto';
+import { X509Certificate } from 'node:crypto';
 
 function pemToCert(pem: string) {
     const base64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
