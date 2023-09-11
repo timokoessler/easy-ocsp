@@ -16,7 +16,7 @@ export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkij
         issuerCertificate: issuerCert,
     });
 
-    const nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(10)) }).toBER();
+    const nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(32)) }).toBER();
     ocspReq.tbsRequest.requestExtensions = [
         new pkijs.Extension({
             extnID: '1.3.6.1.5.5.7.48.1.2', // nonce
