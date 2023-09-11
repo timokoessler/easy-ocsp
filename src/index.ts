@@ -2,7 +2,7 @@ import { X509Certificate } from 'node:crypto';
 import * as pkijs from 'pkijs';
 import { convertToPkijsCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
-import { getCertificateByHost } from './tls';
+import { downloadCert } from './tls';
 
 /**
  * Additional optional configuration
@@ -64,7 +64,7 @@ const defaultConfig: OCSPStatusConfig = {
 };
 
 /**
- * Get the status of a certificate
+ * Get the revocation status of a certificate.
  * @param cert string | Buffer | X509Certificate | pkijs.Certificate
  * @param config Provide optional additional configuration
  * @returns Revocation status of the certificate and additional information if available
@@ -101,14 +101,14 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
 }
 
 /**
- * Download the tls certificate that is used for a domain and check its revocation status. This is a convenience function that combines getCertStatusByDomain and getCertStatus.
+ * Download the tls certificate that is used for a domain and check its revocation status. This is a convenience function that combines downloadCert and getCertStatus.
  * @param domain Domain to check the certificate for (e.g. 'github.com')
  * @param config Provide optional additional configuration
  * @returns Revocation status of the certificate and additional information if available
  * @throws Error if the certificate could not be retrieved or the OCSP request failed
  */
 export async function getCertStatusByDomain(domain: string, config?: OCSPStatusConfig) {
-    return getCertStatus(await getCertificateByHost(domain), config);
+    return getCertStatus(await downloadCert(domain), config);
 }
 
 /**
@@ -123,4 +123,4 @@ export async function getCertURLs(
     return getCAInfoUrls(convertToPkijsCert(cert));
 }
 
-export { getCertificateByHost };
+export { downloadCert };

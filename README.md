@@ -1,5 +1,10 @@
 # EasyOCSP
 
+[![license](https://badgen.net/github/license/timokoessler/easy-ocsp)](https://github.com/timokoessler/easy-ocsp/blob/main/LICENSE)
+[![Known Vulnerabilities](https://snyk.io/test/github/timokoessler/easy-ocsp/badge.svg)](https://snyk.io/test/github/timokoessler/easy-ocsp)
+[![CodeFactor](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp/badge)](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp)
+[![codecov](https://codecov.io/gh/timokoessler/easy-ocsp/graph/badge.svg?token=Q64CL70F8E)](https://codecov.io/gh/timokoessler/easy-ocsp)
+
 **Work in progress**
 
 EasyOCSP is an easy-to-use OCSP client for Node.js that can be used to check the revocation status of X.509 TLS certificates using the Online Certificate Status Protocol (OCSP). Its based on PKI.js but provides a much simpler API and additional features like OCSP nonce verification (RFC 8954).
@@ -10,7 +15,7 @@ A complete documentation can be found at [ocsp.tkoessler.de](https://ocsp.tkoess
 
 You can install EasyOCSP using npm:
 
-```bash
+```sh
 npm install easy-ocsp
 ```
 
@@ -33,6 +38,57 @@ try {
     // Handle errors ...
 }
 ```
+
+### Get cert status by domain
+
+EasyOCSP also provides a function to check the revocation status of a certificate by domain. This function will automatically download the certificate from the given domain and check its revocation status:
+
+```typescript
+import { getCertStatusByDomain } from 'easy-ocsp';
+
+try {
+    const ocspResult = await getCertStatusByDomain('example.com');
+    // ...
+} catch (e) {
+    // Handle errors ...
+}
+```
+
+## Advanced usage
+
+### Get cert urls
+
+You can use the `getCertUrls` function to get the URLs of the OCSP responder and the issuer certificate of a certificate. This is exctracted from the certificate's `authorityInfoAccess` extension:
+
+```typescript
+import { getCertUrls } from 'easy-ocsp';
+
+try {
+    const { ocspUrl, issuerUrl } = await getCertUrls(/* PEM string, DER Buffer, X509Certificate */);
+    // ...
+} catch (e) {
+    // Handle errors ...
+}
+```
+
+### Download cert
+
+You can use the `downloadCert` function to download the certificate of a domain. This function will return the certificate as a DER buffer:
+
+```typescript
+import { downloadCert } from 'easy-ocsp';
+
+try {
+    const cert = await downloadCert('example.com');
+    // ...
+} catch (e) {
+    // Handle errors ...
+}
+```
+
+### Advanced options
+
+You can pass an options object to the `getCertStatus` and `getCertStatusByDomain` functions to configure the OCSP request. You can find a complete list of all options in the [documentation](https://ocsp.tkoessler.de/types/OCSPStatusConfig.html).
 
 ## Contact
 

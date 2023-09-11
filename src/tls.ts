@@ -5,7 +5,7 @@ import { connect as tlsConnect, ConnectionOptions } from 'node:tls';
  * @param hostname Hostname to connect to (e.g. 'github.com')
  * @returns Buffer containing the raw certificate (DER)
  */
-export function getCertificateByHost(hostname: string): Promise<Buffer> {
+export function downloadCert(hostname: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
         const options: ConnectionOptions = {
             port: 443,
