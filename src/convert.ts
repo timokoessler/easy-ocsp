@@ -3,10 +3,14 @@ import { fromBER } from 'asn1js';
 import { X509Certificate } from 'node:crypto';
 
 function pemToCert(pem: string) {
-    const base64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
-    const der = Buffer.from(base64, 'base64');
-    const asn1 = fromBER(new Uint8Array(der).buffer);
-    return new pkijs.Certificate({ schema: asn1.result });
+    try {
+        const base64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
+        const der = Buffer.from(base64, 'base64');
+        const asn1 = fromBER(new Uint8Array(der).buffer);
+        return new pkijs.Certificate({ schema: asn1.result });
+    } catch (err) {
+        throw new Error('The certificate is not a valid PEM encoded X.509 certificate string');
+    }
 }
 
 export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pkijs.Certificate) {
@@ -19,6 +23,6 @@ export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pki
     } else if (cert instanceof pkijs.Certificate) {
         return cert;
     } else {
-        throw new Error('Invalid certificate type');
+        throw new Error('Invalid certificate type. Expected string, Buffer, X509Certificate or pkijs.Certificate');
     }
 }

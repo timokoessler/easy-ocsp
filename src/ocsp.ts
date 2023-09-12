@@ -8,7 +8,7 @@ const cryptoEngine = new pkijs.CryptoEngine({
 });
 pkijs.setEngine('crypto', cryptoEngine);
 
-export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkijs.Certificate) {
+export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkijs.Certificate, config: OCSPStatusConfig) {
     const ocspReq = new pkijs.OCSPRequest();
 
     await ocspReq.createForCertificate(cert, {
@@ -16,14 +16,16 @@ export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkij
         issuerCertificate: issuerCert,
     });
 
-    const nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(32)) }).toBER();
-    ocspReq.tbsRequest.requestExtensions = [
-        new pkijs.Extension({
-            extnID: '1.3.6.1.5.5.7.48.1.2', // nonce
-            extnValue: nonce,
-        }),
-    ];
-
+    let nonce: ArrayBuffer | null = null;
+    if (config.enableNonce) {
+        nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(32)) }).toBER();
+        ocspReq.tbsRequest.requestExtensions = [
+            new pkijs.Extension({
+                extnID: '1.3.6.1.5.5.7.48.1.2', // nonce
+                extnValue: nonce,
+            }),
+        ];
+    }
     return {
         ocspReq: ocspReq.toSchema(true).toBER(),
         nonce,
@@ -68,7 +70,7 @@ export async function parseOCSPResponse(
     certificate: pkijs.Certificate,
     issuerCertificate: pkijs.Certificate,
     config: OCSPStatusConfig,
-    nonce: ArrayBuffer,
+    nonce: ArrayBuffer | null,
 ) {
     const ocspResponse = pkijs.OCSPResponse.fromBER(responseData);
 
@@ -117,7 +119,7 @@ export async function parseOCSPResponse(
     }
 
     if (config.validateSignature) {
-        if (!(await verifySignature(basicResponse, issuerCertificate, nonce, cryptoEngine))) {
+        if (!(await verifySignature(basicResponse, issuerCertificate, nonce, config, cryptoEngine))) {
             throw new Error('OCSP response signature verification failed');
         }
     }
@@ -191,7 +193,8 @@ export async function parseOCSPResponse(
 async function verifySignature(
     basicOcspResponse: pkijs.BasicOCSPResponse,
     trustedCert: pkijs.Certificate,
-    nonce: ArrayBuffer,
+    nonce: ArrayBuffer | null,
+    config: OCSPStatusConfig,
     cryptoEngine = pkijs.getEngine(),
 ) {
     let signatureCert: pkijs.Certificate | null = null;
@@ -252,7 +255,7 @@ async function verifySignature(
     }
 
     // RFC 8954
-    if (Array.isArray(basicOcspResponse.tbsResponseData.responseExtensions)) {
+    if (config.enableNonce && nonce && Array.isArray(basicOcspResponse.tbsResponseData.responseExtensions)) {
         const nonceExtension = basicOcspResponse.tbsResponseData.responseExtensions.find((e) => e.extnID === '1.3.6.1.5.5.7.48.1.2');
         if (nonceExtension && Buffer.compare(Buffer.from(nonce), nonceExtension.extnValue.valueBlock.valueHexView) !== 0) {
             throw new Error('OCSP response nonce does not match request nonce');

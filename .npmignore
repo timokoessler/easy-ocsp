@@ -8,7 +8,7 @@ tsconfig.json
 .eslintignore
 src/
 tsup.config.ts
-jest.config.js
+jest.config.mjs
 examples/
 *.tgz
 .prettierrc.mjs

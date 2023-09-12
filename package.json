@@ -12,7 +12,7 @@
         }
     },
     "scripts": {
-        "test": "jest --coverage --collectCoverageFrom=src/**/*.ts",
+        "test": "jest",
         "lint": "eslint .",
         "format": "prettier --write .",
         "build": "tsup",

@@ -21,6 +21,16 @@ export type OCSPStatusConfig = {
      * @defaultValue true
      */
     validateSignature?: boolean;
+    /**
+     * Timeout in milliseconds for the OCSP request and download of the issuer certificate. If the request takes longer than this, it will be aborted.
+     * @defaultValue 6000
+     */
+    timeout?: number;
+    /**
+     * Whether to include a nonce in the OCSP request. This is enabled by default because it enhances security.
+     * @defaultValue true
+     */
+    enableNonce?: boolean;
 };
 
 export type OCSPStatusResponse = {
@@ -50,9 +60,14 @@ export type OCSPStatusResponse = {
     producedAt?: Date;
 };
 
-async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkijs.Certificate): Promise<Buffer> {
+async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkijs.Certificate, config: OCSPStatusConfig): Promise<Buffer> {
     const { issuerUrl } = getCAInfoUrls(convertToPkijsCert(cert));
-    const res = await fetch(issuerUrl);
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), config.timeout);
+    const res = await fetch(issuerUrl, {
+        signal: ac.signal,
+    });
+    clearTimeout(timeout);
     if (!res.ok) {
         throw new Error(`Issuer certificate download failed with status ${res.status} ${res.statusText} ${issuerUrl}`);
     }
@@ -61,6 +76,8 @@ async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkij
 
 const defaultConfig: OCSPStatusConfig = {
     validateSignature: true,
+    enableNonce: true,
+    timeout: 6000,
 };
 
 /**
@@ -69,29 +86,36 @@ const defaultConfig: OCSPStatusConfig = {
  * @param config Provide optional additional configuration
  * @returns Revocation status of the certificate and additional information if available
  * @throws Error if the OCSP request failed
+ * @throws AbortError if the request timed out
  */
 export async function getCertStatus(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
     config = { ...defaultConfig, ...config };
     const certificate = convertToPkijsCert(cert);
-    let issuerCertificate: pkijs.Certificate;
-    if (!config.ca) {
-        issuerCertificate = convertToPkijsCert(await downloadIssuerCert(certificate));
-    } else {
-        issuerCertificate = convertToPkijsCert(config.ca);
-    }
 
     if (!config.ocspUrl) {
         config.ocspUrl = getCAInfoUrls(certificate).ocspUrl;
     }
-    const { ocspReq, nonce } = await buildOCSPRequest(certificate, issuerCertificate);
 
+    let issuerCertificate: pkijs.Certificate;
+    if (!config.ca) {
+        issuerCertificate = convertToPkijsCert(await downloadIssuerCert(certificate, config));
+    } else {
+        issuerCertificate = convertToPkijsCert(config.ca);
+    }
+
+    const { ocspReq, nonce } = await buildOCSPRequest(certificate, issuerCertificate, config);
+
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), config.timeout);
     const res = await fetch(config.ocspUrl as string, {
         method: 'POST',
+        signal: ac.signal,
         headers: {
             'Content-Type': 'application/ocsp-request',
         },
         body: Buffer.from(ocspReq),
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
         throw new Error(`OCSP request failed with http status ${res.status} ${res.statusText}`);
@@ -106,9 +130,14 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
  * @param config Provide optional additional configuration
  * @returns Revocation status of the certificate and additional information if available
  * @throws Error if the certificate could not be retrieved or the OCSP request failed
+ * @throws AbortError if the request timed out
  */
 export async function getCertStatusByDomain(domain: string, config?: OCSPStatusConfig) {
-    return getCertStatus(await downloadCert(domain), config);
+    let timeout = 6000;
+    if (config && typeof config.timeout === 'number') {
+        timeout = config.timeout;
+    }
+    return getCertStatus(await downloadCert(domain, timeout), config);
 }
 
 /**

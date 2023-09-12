@@ -1,3 +1,4 @@
+import { X509Certificate } from 'crypto';
 import { getCertStatus, getCertURLs } from '../src/index';
 import { readCertFile } from './test-helper';
 
@@ -41,6 +42,12 @@ test('Set ca manually', async () => {
     const result = await getCertStatus(cert, {
         ca: intermediateCA,
     });
+    expect(result.status).toBe('revoked');
+    expect(result.revocationTime?.getTime()).toBe(1694016850000);
+});
+
+test('Pass X509Certificate object', async () => {
+    const result = await getCertStatus(new X509Certificate(cert));
     expect(result.status).toBe('revoked');
     expect(result.revocationTime?.getTime()).toBe(1694016850000);
 });
