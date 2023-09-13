@@ -1,12 +1,16 @@
-import { getCertStatus } from '../src';
+import { getCertStatus, getCertURLs } from '../src';
 import { readCertFile } from './test-helper';
 
 let leCert: string;
+let leIntermediateCA: string;
 let leRealRootCA: string;
+let selfSignedCert: string;
 
 beforeAll(async () => {
     leCert = await readCertFile('le-staging-revoked');
+    leIntermediateCA = await readCertFile('le-staging-artificial-apricot-r3');
     leRealRootCA = await readCertFile('le-isrg-root-x1');
+    selfSignedCert = await readCertFile('self-signed');
 });
 
 test('Invalid PEM', async () => {
@@ -35,4 +39,17 @@ test('Wrong timeout', async () => {
             timeout: 0,
         }),
     ).rejects.toThrow('This operation was aborted');
+});
+
+test('No authority information', async () => {
+    await expect(getCertURLs(selfSignedCert)).rejects.toThrow('Certificate does not contain authority information access extension');
+});
+
+test('Wrong ocsp server', async () => {
+    await expect(
+        getCertStatus(selfSignedCert, {
+            ocspUrl: 'http://stg-r3.o.lencr.org',
+            ca: leIntermediateCA,
+        }),
+    ).rejects.toThrow('OCSP server response: unauthorized');
 });

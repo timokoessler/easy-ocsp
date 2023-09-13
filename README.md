@@ -5,9 +5,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp/badge)](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp)
 [![codecov](https://codecov.io/gh/timokoessler/easy-ocsp/graph/badge.svg?token=Q64CL70F8E)](https://codecov.io/gh/timokoessler/easy-ocsp)
 
-**Work in progress**
-
-EasyOCSP is an easy-to-use OCSP client for Node.js that can be used to check the revocation status of X.509 TLS certificates using the Online Certificate Status Protocol (OCSP). Its based on PKI.js but provides a much simpler API and additional features like OCSP nonce verification (RFC 8954).
+EasyOCSP is an easy-to-use OCSP client for Node.js that can be used to check the revocation status of X.509 TLS certificates using the Online Certificate Status Protocol (OCSP). It's based on PKI.js but provides a much simpler API and additional features like OCSP nonce verification (RFC 8954).
 
 A complete documentation can be found at [ocsp.tkoessler.de](https://ocsp.tkoessler.de).
 
@@ -58,7 +56,7 @@ try {
 
 ### Get cert urls
 
-You can use the `getCertUrls` function to get the URLs of the OCSP responder and the issuer certificate of a certificate. This is exctracted from the certificate's `authorityInfoAccess` extension:
+You can use the `getCertUrls` function to get the URLs of the OCSP responder and the issuer certificate of a certificate. This is extracted from the certificate's `authorityInfoAccess` extension:
 
 ```typescript
 import { getCertUrls } from 'easy-ocsp';
