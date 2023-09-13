@@ -1,6 +1,5 @@
 .gitignore
 test/
-.git_hooks/
 coverage/
 .eslintrc.js
 tsconfig.json
@@ -14,3 +13,7 @@ examples/
 .prettierrc.mjs
 .prettieriignore
 docs/
+.prettierignore
+.vscode/
+typedoc.json
+CODE_OF_CONDUCT.md
