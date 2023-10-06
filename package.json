@@ -1,6 +1,6 @@
 {
     "name": "easy-ocsp",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "An easy-to-use OCSP client for Node.js",
     "main": "dist/index.cjs",
     "module": "dist/index.js",

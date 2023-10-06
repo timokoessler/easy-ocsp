@@ -60,7 +60,10 @@ export type OCSPStatusResponse = {
     producedAt?: Date;
 };
 
-async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkijs.Certificate, config: OCSPStatusConfig): Promise<Buffer> {
+async function downloadIssuerCert(
+    cert: string | Buffer | X509Certificate | pkijs.Certificate,
+    config: OCSPStatusConfig,
+): Promise<pkijs.Certificate> {
     const { issuerUrl } = getCAInfoUrls(convertToPkijsCert(cert));
     const ac = new AbortController();
     const timeout = setTimeout(() => ac.abort(), config.timeout);
@@ -71,7 +74,25 @@ async function downloadIssuerCert(cert: string | Buffer | X509Certificate | pkij
     if (!res.ok) {
         throw new Error(`Issuer certificate download failed with status ${res.status} ${res.statusText} ${issuerUrl}`);
     }
-    return Buffer.from(await res.arrayBuffer());
+
+    /* Some CAs return the certificate as a DER encoded binary file.
+       Others return it as a PEM encoded string (for example Microsoft).
+       This is not always correctly reflected by the Content-Type header. */
+
+    const rawResponse = Buffer.from(await res.arrayBuffer());
+    try {
+        return convertToPkijsCert(rawResponse);
+    } catch (err) {
+        if (err instanceof pkijs.AsnError) {
+            const txt = rawResponse.toString('ascii');
+            if (txt.includes('BEGIN CERTIFICATE')) {
+                return convertToPkijsCert(txt);
+            } else {
+                throw new Error('The issuer certificate is not a valid DER or PEM encoded X.509 certificate');
+            }
+        }
+        throw err;
+    }
 }
 
 const defaultConfig: OCSPStatusConfig = {
@@ -98,7 +119,7 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
 
     let issuerCertificate: pkijs.Certificate;
     if (!config.ca) {
-        issuerCertificate = convertToPkijsCert(await downloadIssuerCert(certificate, config));
+        issuerCertificate = await downloadIssuerCert(certificate, config);
     } else {
         issuerCertificate = convertToPkijsCert(config.ca);
     }
