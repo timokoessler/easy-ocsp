@@ -33,6 +33,23 @@ export type OCSPStatusConfig = {
     enableNonce?: boolean;
 };
 
+/**
+ * The reason why a certificate was revoked.
+ * https://www.rfc-editor.org/rfc/rfc5280#section-5.3.1
+ */
+export enum OCSPRevocationReason {
+    unspecified = 0,
+    keyCompromise = 1,
+    caCompromise = 2,
+    affiliationChanged = 3,
+    superseded = 4,
+    cessationOfOperation = 5,
+    certificateHold = 6,
+    removeFromCRL = 8,
+    privilegeWithdrawn = 9,
+    aACompromise = 10,
+}
+
 export type OCSPStatusResponse = {
     /**
      * Revocation status of the certificate
@@ -58,6 +75,10 @@ export type OCSPStatusResponse = {
      * The time at which the response was produced.
      */
     producedAt?: Date;
+    /**
+     * The revocation reason. Only available if the status is 'revoked' and the OCSP response contains a revocation reason.
+     */
+    revocationReason?: OCSPRevocationReason;
 };
 
 async function downloadIssuerCert(

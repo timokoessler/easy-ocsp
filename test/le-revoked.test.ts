@@ -1,5 +1,5 @@
 import { X509Certificate } from 'crypto';
-import { getCertStatus, getCertURLs } from '../src/index';
+import { getCertStatus, getCertURLs, OCSPRevocationReason } from '../src/index';
 import { readCertFile } from './test-helper';
 
 let cert: string;
@@ -14,6 +14,7 @@ test('Check revoked Lets Encrypt cert', async () => {
     const result = await getCertStatus(cert);
     expect(result.status).toBe('revoked');
     expect(result.revocationTime?.getTime()).toBe(1702737476000);
+    expect(result.revocationReason).toBe(OCSPRevocationReason.superseded);
 });
 
 test('Get OCSP and issuer URLs', async () => {
@@ -44,10 +45,12 @@ test('Set ca manually', async () => {
     });
     expect(result.status).toBe('revoked');
     expect(result.revocationTime?.getTime()).toBe(1702737476000);
+    expect(result.revocationReason).toBe(OCSPRevocationReason.superseded);
 });
 
 test('Pass X509Certificate object', async () => {
     const result = await getCertStatus(new X509Certificate(cert));
     expect(result.status).toBe('revoked');
     expect(result.revocationTime?.getTime()).toBe(1702737476000);
+    expect(result.revocationReason).toBe(OCSPRevocationReason.superseded);
 });

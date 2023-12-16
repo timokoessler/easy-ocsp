@@ -1,5 +1,5 @@
 import { webcrypto } from 'node:crypto';
-import { GeneralizedTime, OctetString, UTCTime } from 'asn1js';
+import { Constructed, Enumerated, GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
 import { OCSPStatusConfig, OCSPStatusResponse } from './index';
 
@@ -176,14 +176,20 @@ export async function parseOCSPResponse(
     }
 
     if (status === 'revoked' && Array.isArray(singleResponse.certStatus?.valueBlock?.value)) {
-        for (const v of basicResponse.tbsResponseData.responses[0].certStatus.valueBlock.value) {
+        for (const v of singleResponse.certStatus.valueBlock.value) {
             if (v instanceof GeneralizedTime) {
                 result.revocationTime = v.toDate();
-                break;
             }
             if (v instanceof UTCTime) {
                 result.revocationTime = v.toDate();
-                break;
+            }
+            if (v instanceof Constructed) {
+                if (Array.isArray(v.valueBlock.value) && v.valueBlock.value.length === 1) {
+                    const vBlock = v.valueBlock.value[0];
+                    if (vBlock instanceof Enumerated) {
+                        result.revocationReason = vBlock.valueBlock.valueDec;
+                    }
+                }
             }
         }
     }
