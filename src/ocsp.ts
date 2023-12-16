@@ -6,7 +6,7 @@ import { OCSPStatusConfig, OCSPStatusResponse } from './index';
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
 });
-pkijs.setEngine('crypto', cryptoEngine);
+pkijs.setEngine('crypto', cryptoEngine as pkijs.ICryptoEngine);
 
 export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkijs.Certificate, config: OCSPStatusConfig) {
     const ocspReq = new pkijs.OCSPRequest();
