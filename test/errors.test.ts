@@ -5,12 +5,14 @@ let leCert: string;
 let leIntermediateCA: string;
 let leRealRootCA: string;
 let selfSignedCert: string;
+let leStagingExpired: string;
 
 beforeAll(async () => {
     leCert = await readCertFile('le-staging-revoked');
     leIntermediateCA = await readCertFile('le-staging-artificial-apricot-r3');
     leRealRootCA = await readCertFile('le-isrg-root-x1');
     selfSignedCert = await readCertFile('self-signed');
+    leStagingExpired = await readCertFile('le-staging-expired');
 });
 
 test('Invalid PEM', async () => {
@@ -52,4 +54,8 @@ test('Wrong ocsp server', async () => {
             ca: leIntermediateCA,
         }),
     ).rejects.toThrow('OCSP server response: unauthorized');
+});
+
+test('Expired certificate', async () => {
+    await expect(getCertStatus(leStagingExpired)).rejects.toThrow('The certificate is already expired');
 });

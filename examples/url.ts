@@ -2,6 +2,7 @@ import { getCertStatusByDomain } from '../dist';
 
 (async () => {
     try {
+        // Urls are converted to the domain automatically
         const ocspResult = await getCertStatusByDomain('https://www.github.com');
         switch (ocspResult.status) {
             case 'good':

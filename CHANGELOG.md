@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2024-01
+
+### Added
+
+-   Automatically convert url to domain in `getCertStatusByDomain`
+-   Add examples
+
+### Changed
+
+-   Throw error if the certificate is already expired
+-   Update dependencies
+
 ## [0.3.0] - 2023-12
 
 ### Added

@@ -134,6 +134,11 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
     config = { ...defaultConfig, ...config };
     const certificate = convertToPkijsCert(cert);
 
+    // Check if the certificate is expired
+    if (certificate.notAfter.value.getTime() < Date.now()) {
+        throw new Error('The certificate is already expired');
+    }
+
     if (!config.ocspUrl) {
         config.ocspUrl = getCAInfoUrls(certificate).ocspUrl;
     }
@@ -178,6 +183,14 @@ export async function getCertStatusByDomain(domain: string, config?: OCSPStatusC
     let timeout = 6000;
     if (config && typeof config.timeout === 'number') {
         timeout = config.timeout;
+    }
+    if (domain.includes('/')) {
+        try {
+            const url = new URL(domain);
+            domain = url.hostname;
+        } catch (e) {
+            throw new Error('Invalid URL');
+        }
     }
     return getCertStatus(await downloadCert(domain, timeout), config);
 }
