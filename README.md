@@ -104,5 +104,5 @@ If a public GitHub issue or discussion is not the right choice for your concern,
 
 ## License
 
-© Timo Kössler 2024
+© [Timo Kössler](https://timokoessler.de) 2024  
 Released under the [MIT license](https://github.com/timokoessler/easy-ocsp/blob/main/LICENSE)
