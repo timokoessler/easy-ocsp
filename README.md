@@ -3,7 +3,6 @@
 [![npm version](https://badgen.net/npm/v/easy-ocsp)](https://www.npmjs.com/package/easy-ocsp)
 [![npm downloads](https://badgen.net/npm/dt/easy-ocsp)](https://www.npmjs.com/package/easy-ocsp)
 [![license](https://badgen.net/github/license/timokoessler/easy-ocsp)](https://github.com/timokoessler/easy-ocsp/blob/main/LICENSE)
-[![Known Vulnerabilities](https://snyk.io/test/github/timokoessler/easy-ocsp/badge.svg)](https://snyk.io/test/github/timokoessler/easy-ocsp)
 [![CodeFactor](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp/badge)](https://www.codefactor.io/repository/github/timokoessler/easy-ocsp)
 [![codecov](https://codecov.io/gh/timokoessler/easy-ocsp/graph/badge.svg?token=Q64CL70F8E)](https://codecov.io/gh/timokoessler/easy-ocsp)
 
