@@ -85,6 +85,21 @@ try {
 }
 ```
 
+### Get raw OCSP response
+
+You can use the `getRawOCSPResponse` function to get the OCSP response bytes. This function will return the OCSP response and the nonce as a buffer and the issuer certificate as pem string. The response is not parsed or validated.
+
+```typescript
+import { getRawOCSPResponse } from 'easy-ocsp';
+
+try {
+    const { rawResponse, nonce, issuerCert } = await getRawOCSPResponse(/* PEM string, DER Buffer, X509Certificate */);
+    // ...
+} catch (e) {
+    // Handle errors ...
+}
+```
+
 ### Advanced options
 
 You can pass an options object to the `getCertStatus` and `getCertStatusByDomain` functions to configure the OCSP request. You can find a complete list of all options in the [documentation](https://ocsp.tkoessler.de/types/OCSPStatusConfig.html).

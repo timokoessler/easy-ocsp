@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2024-05
+
+### Added
+
+-   Add `getRawOCSPResponse` function to get only the bytes of the OCSP response
+-   New option `rawResponse` to get the raw OCSP response additionally to the parsed response
+
+### Changed
+
+-   Update dependencies
+
 ## [1.0.1] - 2024-01
 
 ### Changed
