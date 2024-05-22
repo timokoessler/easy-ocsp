@@ -193,6 +193,11 @@ export async function parseOCSPResponse(
             }
         }
     }
+
+    if (config.rawResponse === true) {
+        result.rawResponse = responseData;
+    }
+
     return result;
 }
 

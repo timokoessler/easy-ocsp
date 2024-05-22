@@ -31,6 +31,10 @@ export type OCSPStatusConfig = {
      * @defaultValue true
      */
     enableNonce?: boolean;
+    /**
+     * Whether to return the raw response as a buffer additionally to the parsed response. This is disabled by default.
+     */
+    rawResponse?: boolean;
 };
 
 /**
@@ -79,6 +83,10 @@ export type OCSPStatusResponse = {
      * The revocation reason. Only available if the status is 'revoked' and the OCSP response contains a revocation reason.
      */
     revocationReason?: OCSPRevocationReason;
+    /**
+     * The raw OCSP response as a buffer. Only available if the rawResponse option is enabled in the config.
+     */
+    rawResponse?: Buffer;
 };
 
 async function downloadIssuerCert(
@@ -123,15 +131,12 @@ const defaultConfig: OCSPStatusConfig = {
 };
 
 /**
- * Get the revocation status of a certificate.
- * @param cert string | Buffer | X509Certificate | pkijs.Certificate
- * @param config Provide optional additional configuration
- * @returns Revocation status of the certificate and additional information if available
- * @throws Error if the OCSP request failed
- * @throws AbortError if the request timed out
+ * Internal function to send an OCSP request and return the response
+ * @param cert The certificate to check
+ * @param config Additional configuration
+ * @returns The OCSP response as a buffer, the certificate and the issuer certificate and the nonce
  */
-export async function getCertStatus(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
-    config = { ...defaultConfig, ...config };
+async function sendOCSPRequest(cert: string | Buffer | X509Certificate | pkijs.Certificate, config: OCSPStatusConfig) {
     const certificate = convertToPkijsCert(cert);
 
     // Check if the certificate is expired
@@ -168,7 +173,22 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
         throw new Error(`OCSP request failed with http status ${res.status} ${res.statusText}`);
     }
 
-    return parseOCSPResponse(Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate, config, nonce);
+    return { response: Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate, nonce };
+}
+
+/**
+ * Get the revocation status of a certificate.
+ * @param cert string | Buffer | X509Certificate | pkijs.Certificate
+ * @param config Provide optional additional configuration
+ * @returns Revocation status of the certificate and additional information if available
+ * @throws Error if the OCSP request failed
+ * @throws AbortError if the request timed out
+ */
+export async function getCertStatus(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
+    config = { ...defaultConfig, ...config };
+
+    const { response, certificate, issuerCertificate, nonce } = await sendOCSPRequest(cert, config);
+    return parseOCSPResponse(response, certificate, issuerCertificate, config, nonce);
 }
 
 /**

@@ -54,3 +54,12 @@ test('Pass X509Certificate object', async () => {
     expect(result.revocationTime?.getTime()).toBe(1715880904000);
     expect(result.revocationReason).toBe(OCSPRevocationReason.superseded);
 });
+
+test('Get raw response additionally', async () => {
+    const result = await getCertStatus(cert, {
+        rawResponse: true,
+    });
+    expect(result.status).toBe('revoked');
+    expect(result.rawResponse).toBeInstanceOf(Buffer);
+    expect(result.rawResponse?.length).toBeGreaterThan(10);
+});
