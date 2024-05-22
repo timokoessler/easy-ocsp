@@ -1,5 +1,5 @@
 import { X509Certificate } from 'crypto';
-import { getCertStatus, getCertURLs, OCSPRevocationReason } from '../src/index';
+import { getCertStatus, getCertURLs, getRawOCSPResponse, OCSPRevocationReason } from '../src/index';
 import { readCertFile } from './test-helper';
 
 let cert: string;
@@ -62,4 +62,12 @@ test('Get raw response additionally', async () => {
     expect(result.status).toBe('revoked');
     expect(result.rawResponse).toBeInstanceOf(Buffer);
     expect(result.rawResponse?.length).toBeGreaterThan(10);
+});
+
+test('Get raw response', async () => {
+    const result = await getRawOCSPResponse(cert);
+    expect(result.rawResponse).toBeInstanceOf(Buffer);
+    expect(result.rawResponse?.length).toBeGreaterThan(10);
+    expect(result.nonce).toBeInstanceOf(Buffer);
+    expect(result.issuerCert.replace(/[\n\r]/g, '')).toEqual(intermediateCA.replace(/[\n\r]/g, ''));
 });

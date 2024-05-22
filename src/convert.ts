@@ -2,6 +2,11 @@ import * as pkijs from 'pkijs';
 import { fromBER } from 'asn1js';
 import { X509Certificate } from 'node:crypto';
 
+/**
+ * Convert a PEM encoded X.509 certificate to a pkijs.Certificate object
+ * @param pem The certificate to convert as a string
+ * @returns A pkijs.Certificate object
+ */
 function pemToCert(pem: string) {
     try {
         const base64 = pem.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, '');
@@ -13,6 +18,11 @@ function pemToCert(pem: string) {
     }
 }
 
+/**
+ * Convert a certificate to a pkijs.Certificate object
+ * @param cert The certificate to convert as a string, Buffer, X509Certificate or pkijs.Certificate
+ * @returns A pkijs.Certificate object
+ */
 export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pkijs.Certificate) {
     if (typeof cert === 'string') {
         return pemToCert(cert);
@@ -25,4 +35,15 @@ export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pki
     } else {
         throw new Error('Invalid certificate type. Expected string, Buffer, X509Certificate or pkijs.Certificate');
     }
+}
+
+/**
+ * Convert a pkijs.Certificate object to a PEM encoded X.509 certificate
+ * @param cert The certificate to convert
+ * @returns The certificate as a PEM encoded string
+ */
+export function convertPkijsCertToPem(cert: pkijs.Certificate) {
+    const der = Buffer.from(cert.toSchema().toBER(false));
+    const base64 = der.toString('base64');
+    return `-----BEGIN CERTIFICATE-----\n${base64.match(/.{1,64}/g)?.join('\n')}\n-----END CERTIFICATE-----\n`;
 }

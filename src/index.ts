@@ -1,6 +1,6 @@
 import { X509Certificate } from 'node:crypto';
 import * as pkijs from 'pkijs';
-import { convertToPkijsCert } from './convert';
+import { convertPkijsCertToPem, convertToPkijsCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
 import { downloadCert } from './tls';
 
@@ -213,6 +213,25 @@ export async function getCertStatusByDomain(domain: string, config?: OCSPStatusC
         }
     }
     return getCertStatus(await downloadCert(domain, timeout), config);
+}
+
+/**
+ * Get raw (binary) OCSP response for a certificate
+ * The response is not parsed or validated.
+ * @param cert string | Buffer | X509Certificate | pkijs.Certificate
+ * @param config Provide optional additional configuration
+ * @returns The raw OCSP response as a buffer, the nonce and the pem encoded issuer certificate
+ */
+export async function getRawOCSPResponse(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
+    config = { ...defaultConfig, ...config };
+
+    const { response, issuerCertificate, nonce } = await sendOCSPRequest(cert, config);
+
+    return {
+        rawResponse: response,
+        nonce: nonce ? Buffer.from(nonce) : undefined,
+        issuerCert: convertPkijsCertToPem(issuerCertificate),
+    };
 }
 
 /**
