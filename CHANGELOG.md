@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2024-08
+
+### Added
+
+-   Export `downloadIssuerCert` function
+
+### Changed
+
+-   The function `getCertURLs` is no longer async
+-   Update dependencies
+
 ## [1.1.0] - 2024-05
 
 ### Added

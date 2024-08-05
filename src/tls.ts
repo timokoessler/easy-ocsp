@@ -1,4 +1,4 @@
-import { connect as tlsConnect, ConnectionOptions } from 'node:tls';
+import { connect as tlsConnect, type ConnectionOptions } from 'node:tls';
 
 /**
  * Get a TLS certificate by hostname. This function will always connect to port 443.

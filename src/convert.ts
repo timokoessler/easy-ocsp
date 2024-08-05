@@ -26,15 +26,17 @@ function pemToCert(pem: string) {
 export function convertToPkijsCert(cert: string | Buffer | X509Certificate | pkijs.Certificate) {
     if (typeof cert === 'string') {
         return pemToCert(cert);
-    } else if (cert instanceof X509Certificate) {
-        return pemToCert(cert.toString());
-    } else if (cert instanceof Buffer) {
-        return pkijs.Certificate.fromBER(cert);
-    } else if (cert instanceof pkijs.Certificate) {
-        return cert;
-    } else {
-        throw new Error('Invalid certificate type. Expected string, Buffer, X509Certificate or pkijs.Certificate');
     }
+    if (cert instanceof X509Certificate) {
+        return pemToCert(cert.toString());
+    }
+    if (cert instanceof Buffer) {
+        return pkijs.Certificate.fromBER(cert);
+    }
+    if (cert instanceof pkijs.Certificate) {
+        return cert;
+    }
+    throw new Error('Invalid certificate type. Expected string, Buffer, X509Certificate or pkijs.Certificate');
 }
 
 /**

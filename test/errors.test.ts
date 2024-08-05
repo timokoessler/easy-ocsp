@@ -1,3 +1,4 @@
+import { expect, beforeAll, test } from '@jest/globals';
 import { getCertStatus, getCertURLs } from '../src';
 import { readCertFile } from './test-helper';
 
@@ -43,8 +44,8 @@ test('Wrong timeout', async () => {
     ).rejects.toThrow('This operation was aborted');
 });
 
-test('No authority information', async () => {
-    await expect(getCertURLs(selfSignedCert)).rejects.toThrow('Certificate does not contain authority information access extension');
+test('No authority information', () => {
+    expect(() => getCertURLs(selfSignedCert)).toThrow('Certificate does not contain authority information access extension');
 });
 
 test('Wrong ocsp server', async () => {

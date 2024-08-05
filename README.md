@@ -63,7 +63,7 @@ You can use the `getCertUrls` function to get the URLs of the OCSP responder and
 import { getCertUrls } from 'easy-ocsp';
 
 try {
-    const { ocspUrl, issuerUrl } = await getCertUrls(/* PEM string, DER Buffer, X509Certificate */);
+    const { ocspUrl, issuerUrl } = getCertUrls(/* PEM string, DER Buffer, X509Certificate */);
     // ...
 } catch (e) {
     // Handle errors ...

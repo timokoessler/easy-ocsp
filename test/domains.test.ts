@@ -1,3 +1,4 @@
+import {expect, describe, test} from '@jest/globals';
 import { getCertStatusByDomain } from '../src/index';
 
 const domains = [

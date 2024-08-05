@@ -1,7 +1,7 @@
 import { webcrypto } from 'node:crypto';
 import { Constructed, Enumerated, GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
-import { OCSPStatusConfig, OCSPStatusResponse } from './index';
+import type { OCSPStatusConfig, OCSPStatusResponse } from './index';
 
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
@@ -276,7 +276,7 @@ async function verifySignature(
     return cryptoEngine.crypto.verifyWithPublicKey(
         basicOcspResponse.tbsResponseData.tbsView,
         basicOcspResponse.signature,
-        signatureCert!.subjectPublicKeyInfo,
+        signatureCert.subjectPublicKeyInfo,
         basicOcspResponse.signatureAlgorithm,
     );
 }

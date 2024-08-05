@@ -1,6 +1,5 @@
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
 
 export async function readCertFile(name: string) {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    return readFile(`${__dirname}/certs/${name}.pem`, 'ascii');
+    return await readFile(`${__dirname}/certs/${name}.pem`, 'ascii');
 }

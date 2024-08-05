@@ -1,4 +1,5 @@
-import { X509Certificate } from 'crypto';
+import { expect, test, beforeAll } from '@jest/globals';
+import { X509Certificate } from 'node:crypto';
 import { getCertStatus, getCertURLs, getRawOCSPResponse, OCSPRevocationReason } from '../src/index';
 import { readCertFile } from './test-helper';
 
@@ -17,8 +18,8 @@ test('Check revoked Lets Encrypt cert', async () => {
     expect(result.revocationReason).toBe(OCSPRevocationReason.superseded);
 });
 
-test('Get OCSP and issuer URLs', async () => {
-    const result = await getCertURLs(cert);
+test('Get OCSP and issuer URLs', () => {
+    const result = getCertURLs(cert);
     expect(result.ocspUrl).toBe('http://stg-r10.o.lencr.org');
     expect(result.issuerUrl).toBe('http://stg-r10.i.lencr.org/');
 });
