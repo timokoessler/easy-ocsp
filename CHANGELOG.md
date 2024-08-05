@@ -4,14 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [1.2.0] - 2024-08
 
+### Breaking changes
+
+-   The function `getCertURLs` is no longer async ❗ (was async with no need)
+
 ### Added
 
--   Export `downloadIssuerCert` function
+-   Export `downloadIssuerCert` function for usage outside of the module
 
 ### Changed
 
--   The function `getCertURLs` is no longer async
--   Update dependencies
+-   Use biome for linting and formatting instead of eslint and prettier
+-   Improve code quality and test coverage
+-   Update dependencies and GitHub Actions
 
 ## [1.1.0] - 2024-05
 
