@@ -9,20 +9,21 @@ jobs:
             contents: read
             id-token: write
         steps:
-            - uses: actions/checkout@v3
-            - name: Use Node.js 20
+            - name: Checkout repository ⬇️
+              uses: actions/checkout@v4
+            - name: Setup Node.js 20 ⚙️
               uses: actions/setup-node@v3
               with:
                   node-version: 20.x
                   cache: 'npm'
                   registry-url: 'https://registry.npmjs.org'
-            - name: Ensure latest npm version
+            - name: Ensure latest npm version 📦
               run: npm install -g npm
-            - name: Install dependencies
+            - name: Install dependencies 📦
               run: npm ci
-            - name: Build
+            - name: Build package 🏗️
               run: npm run build
-            - name: Publish to npm
+            - name: Publish to npm 🚀
               run: npm publish --provenance --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
