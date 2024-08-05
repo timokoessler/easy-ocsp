@@ -1,4 +1,4 @@
-import { X509Certificate } from 'node:crypto';
+import type { X509Certificate } from 'node:crypto';
 import * as pkijs from 'pkijs';
 import { convertPkijsCertToPem, convertToPkijsCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
@@ -89,6 +89,14 @@ export type OCSPStatusResponse = {
     rawResponse?: Buffer;
 };
 
+/**
+ * Function to download and parse the certificate of the issuer of a certificate
+ * This function is used internally to download the issuer certificate if it is not provided in the config
+ * Its exported for convenience if you want to download the issuer certificate manually for some reason
+ * @param cert The certificate to download the issuer certificate for
+ * @param config Additional configuration
+ * @returns A pkijs.Certificate object of the issuer certificate
+ */
 export async function downloadIssuerCert(
     cert: string | Buffer | X509Certificate | pkijs.Certificate,
     config: OCSPStatusConfig,
@@ -116,9 +124,8 @@ export async function downloadIssuerCert(
             const txt = rawResponse.toString('ascii');
             if (txt.includes('BEGIN CERTIFICATE')) {
                 return convertToPkijsCert(txt);
-            } else {
-                throw new Error('The issuer certificate is not a valid DER or PEM encoded X.509 certificate');
             }
+            throw new Error('The issuer certificate is not a valid DER or PEM encoded X.509 certificate');
         }
         throw err;
     }
@@ -240,9 +247,7 @@ export async function getRawOCSPResponse(cert: string | Buffer | X509Certificate
  * @returns OCSP and issuer URLs
  * @throws Error if the certificate does not contain the required information
  */
-export async function getCertURLs(
-    cert: string | Buffer | X509Certificate | pkijs.Certificate,
-): Promise<{ ocspUrl: string; issuerUrl: string }> {
+export function getCertURLs(cert: string | Buffer | X509Certificate | pkijs.Certificate): { ocspUrl: string; issuerUrl: string } {
     return getCAInfoUrls(convertToPkijsCert(cert));
 }
 
