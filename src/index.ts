@@ -89,7 +89,7 @@ export type OCSPStatusResponse = {
     rawResponse?: Buffer;
 };
 
-async function downloadIssuerCert(
+export async function downloadIssuerCert(
     cert: string | Buffer | X509Certificate | pkijs.Certificate,
     config: OCSPStatusConfig,
 ): Promise<pkijs.Certificate> {
