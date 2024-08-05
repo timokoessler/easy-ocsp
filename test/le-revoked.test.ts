@@ -1,7 +1,8 @@
 import { expect, test, beforeAll } from '@jest/globals';
 import { X509Certificate } from 'node:crypto';
-import { getCertStatus, getCertURLs, getRawOCSPResponse, OCSPRevocationReason } from '../src/index';
+import { downloadIssuerCert, getCertStatus, getCertURLs, getRawOCSPResponse, OCSPRevocationReason } from '../src/index';
 import { readCertFile } from './test-helper';
+import { convertToPkijsCert } from '../src/convert';
 
 let cert: string;
 let intermediateCA: string;
@@ -71,4 +72,10 @@ test('Get raw response', async () => {
     expect(result.rawResponse?.length).toBeGreaterThan(10);
     expect(result.nonce).toBeInstanceOf(Buffer);
     expect(result.issuerCert.replace(/[\n\r]/g, '')).toEqual(intermediateCA.replace(/[\n\r]/g, ''));
+});
+
+test('Download issuer cert', async () => {
+    const issuerCert = await downloadIssuerCert(cert);
+    const expectedIssuerCert = convertToPkijsCert(intermediateCA);
+    expect(issuerCert.toJSON()).toEqual(expectedIssuerCert.toJSON());
 });

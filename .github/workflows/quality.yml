@@ -1,0 +1,19 @@
+name: Code quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository ⬇️
+        uses: actions/checkout@v4
+      - name: Setup Biome ⚙️
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+      - name: Run Biome 🚀
+        run: biome ci .

@@ -1,5 +1,5 @@
 import { expect, beforeAll, test } from '@jest/globals';
-import { getCertStatus, getCertURLs } from '../src';
+import { downloadIssuerCert, getCertStatus, getCertStatusByDomain, getCertURLs } from '../src';
 import { readCertFile } from './test-helper';
 
 let leCert: string;
@@ -59,4 +59,20 @@ test('Wrong ocsp server', async () => {
 
 test('Expired certificate', async () => {
     await expect(getCertStatus(leStagingExpired)).rejects.toThrow('The certificate is already expired');
+});
+
+test('Invalid url', async () => {
+    await expect(getCertStatusByDomain('test:// invalid %')).rejects.toThrow('Invalid URL');
+});
+
+test('Invalid domain', async () => {
+    await expect(getCertStatusByDomain('enotfound.example.com')).rejects.toThrow('getaddrinfo ENOTFOUND enotfound.example.com');
+});
+
+test('Abort getCertStatus', async () => {
+    await expect(getCertStatus(leCert, { timeout: 0 })).rejects.toThrow('This operation was aborted');
+});
+
+test('Aboirt download issuer cert', async () => {
+    await expect(downloadIssuerCert(leCert, 0)).rejects.toThrow('This operation was aborted');
 });

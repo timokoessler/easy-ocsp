@@ -94,20 +94,24 @@ export type OCSPStatusResponse = {
  * This function is used internally to download the issuer certificate if it is not provided in the config
  * Its exported for convenience if you want to download the issuer certificate manually for some reason
  * @param cert The certificate to download the issuer certificate for
- * @param config Additional configuration
+ * @param timeout Optional timeout in milliseconds for the request. Default is 6000ms
  * @returns A pkijs.Certificate object of the issuer certificate
  */
 export async function downloadIssuerCert(
     cert: string | Buffer | X509Certificate | pkijs.Certificate,
-    config: OCSPStatusConfig,
+    timeout?: number,
 ): Promise<pkijs.Certificate> {
+    let _timeoutMs = 6000;
+    if (typeof timeout === 'number') {
+        _timeoutMs = timeout;
+    }
     const { issuerUrl } = getCAInfoUrls(convertToPkijsCert(cert));
     const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), config.timeout);
+    const _timeout = setTimeout(() => ac.abort(), _timeoutMs);
     const res = await fetch(issuerUrl, {
         signal: ac.signal,
     });
-    clearTimeout(timeout);
+    clearTimeout(_timeout);
     if (!res.ok) {
         throw new Error(`Issuer certificate download failed with status ${res.status} ${res.statusText} ${issuerUrl}`);
     }
@@ -157,7 +161,7 @@ async function sendOCSPRequest(cert: string | Buffer | X509Certificate | pkijs.C
 
     let issuerCertificate: pkijs.Certificate;
     if (!config.ca) {
-        issuerCertificate = await downloadIssuerCert(certificate, config);
+        issuerCertificate = await downloadIssuerCert(certificate, config.timeout);
     } else {
         issuerCertificate = convertToPkijsCert(config.ca);
     }
@@ -192,10 +196,10 @@ async function sendOCSPRequest(cert: string | Buffer | X509Certificate | pkijs.C
  * @throws AbortError if the request timed out
  */
 export async function getCertStatus(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
-    config = { ...defaultConfig, ...config };
+    const _config = { ...defaultConfig, ...config };
 
-    const { response, certificate, issuerCertificate, nonce } = await sendOCSPRequest(cert, config);
-    return parseOCSPResponse(response, certificate, issuerCertificate, config, nonce);
+    const { response, certificate, issuerCertificate, nonce } = await sendOCSPRequest(cert, _config);
+    return parseOCSPResponse(response, certificate, issuerCertificate, _config, nonce);
 }
 
 /**
@@ -207,19 +211,20 @@ export async function getCertStatus(cert: string | Buffer | X509Certificate | pk
  * @throws AbortError if the request timed out
  */
 export async function getCertStatusByDomain(domain: string, config?: OCSPStatusConfig) {
+    let _domain = domain;
     let timeout = 6000;
     if (config && typeof config.timeout === 'number') {
         timeout = config.timeout;
     }
-    if (domain.includes('/')) {
+    if (_domain.includes('/')) {
         try {
-            const url = new URL(domain);
-            domain = url.hostname;
+            const url = new URL(_domain);
+            _domain = url.hostname;
         } catch (e) {
             throw new Error('Invalid URL');
         }
     }
-    return getCertStatus(await downloadCert(domain, timeout), config);
+    return getCertStatus(await downloadCert(_domain, timeout), config);
 }
 
 /**
@@ -230,9 +235,9 @@ export async function getCertStatusByDomain(domain: string, config?: OCSPStatusC
  * @returns The raw OCSP response as a buffer, the nonce and the pem encoded issuer certificate
  */
 export async function getRawOCSPResponse(cert: string | Buffer | X509Certificate | pkijs.Certificate, config?: OCSPStatusConfig) {
-    config = { ...defaultConfig, ...config };
+    const _config = { ...defaultConfig, ...config };
 
-    const { response, issuerCertificate, nonce } = await sendOCSPRequest(cert, config);
+    const { response, issuerCertificate, nonce } = await sendOCSPRequest(cert, _config);
 
     return {
         rawResponse: response,

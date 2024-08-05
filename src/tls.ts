@@ -2,7 +2,7 @@ import { connect as tlsConnect, type ConnectionOptions } from 'node:tls';
 
 /**
  * Get a TLS certificate by hostname. This function will always connect to port 443.
- * @param hostname Hostname to connect to (e.g. 'github.com')
+ * @param hostname Hostname to connect to (e.g. 'github.com') - not an URL
  * @param timeout Timeout in milliseconds (default: 6000)
  * @returns Buffer containing the raw certificate (DER)
  * @throws AbortError if the request timed out

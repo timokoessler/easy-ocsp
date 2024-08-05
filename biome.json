@@ -1,38 +1,38 @@
 {
-  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "organizeImports": {
-    "enabled": false
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUndeclaredVariables": "error",
-        "noUnusedImports": "error"
-      },
-      "suspicious": {
-        "noConsoleLog": "error",
-        "noEmptyBlockStatements": "error",
-        "useAwait": "error"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentWidth": 4,
-    "indentStyle": "space",
-    "lineWidth": 140
-  },
-  "javascript": {
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+    "organizeImports": {
+        "enabled": false
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "correctness": {
+                "noUndeclaredVariables": "error",
+                "noUnusedImports": "error"
+            },
+            "suspicious": {
+                "noConsoleLog": "error",
+                "noEmptyBlockStatements": "error",
+                "useAwait": "error"
+            }
+        }
+    },
     "formatter": {
-      "quoteStyle": "single",
-      "semicolons": "always",
-      "indentStyle": "space",
-      "indentWidth": 4
+        "enabled": true,
+        "indentWidth": 4,
+        "indentStyle": "space",
+        "lineWidth": 140
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle": "single",
+            "semicolons": "always",
+            "indentStyle": "space",
+            "indentWidth": 4
+        }
+    },
+    "files": {
+        "ignore": ["dist", "node_modules", "coverage", "docs", "examples"]
     }
-  },
-  "files": {
-    "ignore": ["dist", "node_modules", "coverage", "docs"]
-  }
 }
