@@ -1,4 +1,5 @@
-import { expect, describe, test } from '@jest/globals';
+import { describe, test } from 'node:test';
+import { equal } from 'node:assert';
 import { downloadCert, getCertStatus, getCertStatusByDomain } from '../src/index';
 
 const domains = [
@@ -27,16 +28,16 @@ describe('Get certificate status by domain', () => {
             const response = await getCertStatusByDomain(domain, {
                 timeout: 10000,
             });
-            expect(response.status).toBe('good');
-            expect(response.revocationTime).toBe(undefined);
-            expect(response.producedAt).toBeInstanceOf(Date);
+            equal(response.status, 'good');
+            equal(response.revocationTime, undefined);
+            equal(response.producedAt instanceof Date, true);
         });
     }
 
-    test('Download cert should lead to same result', async () => {
+    test('Download cert should work as well', async () => {
         const response = await getCertStatus(await downloadCert('timokoessler.de'));
-        expect(response.status).toBe('good');
-        expect(response.revocationTime).toBe(undefined);
-        expect(response.producedAt).toBeInstanceOf(Date);
+        equal(response.status, 'good');
+        equal(response.revocationTime, undefined);
+        equal(response.producedAt instanceof Date, true);
     });
 });

@@ -3,6 +3,5 @@ node_modules/
 *.log
 *.gz
 *.tgz
-coverage/
 dist
 docs
