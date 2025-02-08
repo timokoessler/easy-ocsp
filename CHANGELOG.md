@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2025-02
+
+### Changed
+
+-   Update dependencies
+-   Use Node.js 22 in CI
+-   Migrate tests from Jest to Node.js Test Runner
+
 ## [1.2.0] - 2024-08
 
 ### Breaking changes
