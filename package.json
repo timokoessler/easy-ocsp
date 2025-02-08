@@ -13,7 +13,7 @@
     },
     "scripts": {
         "test": "node --import tsx --test --test-concurrency 4 test/**/*.test.ts",
-        "test:cov": "node --import tsx --test --test-concurrency 4 --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info test/**/*.test.ts",
+        "test:cov": "node --import tsx --test --test-concurrency 4 --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info --test-coverage-include src/**/*.ts test/**/*.test.ts",
         "lint": "biome lint",
         "format": "biome format --write",
         "build": "tsup",
