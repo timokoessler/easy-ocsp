@@ -10,6 +10,10 @@ EasyOCSP is an easy-to-use OCSP client for Node.js that can be used to check the
 
 A complete documentation can be found at [ocsp.tkoessler.de](https://ocsp.tkoessler.de).
 
+<a href="https://www.aikido.dev" target="_blank">
+    <img src="https://app.aikido.dev/assets/badges/label-only-light-theme.svg" alt="Aikido Security" height="25" />    
+</a>
+
 ## Getting started
 
 You can install EasyOCSP using npm:
