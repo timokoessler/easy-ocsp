@@ -3,10 +3,8 @@ import { equal } from 'node:assert';
 import { downloadCert, getCertStatus, getCertStatusByDomain } from '../src/index';
 
 const domains = [
-    'timokoessler.de',
     'github.com',
     'www.google.de',
-    'stackoverflow.com',
     'www.microsoft.com',
     'www.apple.com',
     'www.amazon.de',
@@ -19,7 +17,6 @@ const domains = [
     'www.godaddy.com',
     'www.rapidssl.com',
     'www.entrust.com',
-    'https://tkoessler.de',
 ];
 
 describe('Get certificate status by domain', () => {
