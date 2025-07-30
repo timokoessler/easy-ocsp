@@ -260,4 +260,4 @@ export function getCertURLs(cert: string | Buffer | X509Certificate | pkijs.Cert
     return getCAInfoUrls(convertToPkijsCert(cert));
 }
 
-export { downloadCert };
+export { downloadCert, parseOCSPResponse, convertToPkijsCert };
