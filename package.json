@@ -18,19 +18,13 @@
         "format": "biome format --write",
         "build": "tsup",
         "build:docs": "typedoc --skipErrorChecking",
-        "check:types": "tsc --noEmit",
-        "prepare": "npm run build"
+        "check:types": "tsc --noEmit"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/timokoessler/easy-ocsp.git"
     },
-    "keywords": [
-        "ocsp",
-        "ocsp client",
-        "X.509",
-        "certificate"
-    ],
+    "keywords": ["ocsp", "ocsp client", "X.509", "certificate"],
     "engines": {
         "node": ">=18"
     },
