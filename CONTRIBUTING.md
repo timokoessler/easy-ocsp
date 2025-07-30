@@ -16,8 +16,9 @@ Read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachabl
 
 ## PRs and code contributions
 
--   After cloning the repo run `npm i`
--   Run `npm run lint` before every commit
--   Make sure that the code is formatted by running `npm run format`
--   If you add new modules or other features, please create tests
--   Before you create a PR, run `npm t` to run all tests and check if you can build the code by running `npm run build`
+- After cloning the repo run `npm i`
+- Run `npm run lint` before every commit
+- Make sure that the code is formatted by running `npm run format`
+- Make sure that there are no type errors by running `npm run check:types`
+- If you add new modules or other features, please create tests
+- Before you create a PR, run `npm t` to run all tests and check if you can build the code by running `npm run build`

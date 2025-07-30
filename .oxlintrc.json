@@ -1,0 +1,29 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["oxc", "typescript", "unicorn", "node", "promise"],
+    "env": {
+        "browser": false,
+        "node": true
+    },
+    "settings": {},
+    "rules": {
+        "no-console": "error",
+        "no-empty": "error",
+        "no-empty-function": "error",
+        "no-proto": "error",
+        "no-regex-spaces": "error",
+        "eqeqeq": "error",
+        "no-prototype-builtins": "error",
+        "require-await": "error",
+        "curly": "error",
+        "prefer-await-to-then": "error"
+    },
+    "overrides": [
+        {
+            "files": ["examples/**/*.ts"],
+            "rules": {
+                "no-console": "off"
+            }
+        }
+    ]
+}

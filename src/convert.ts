@@ -13,7 +13,7 @@ function pemToCert(pem: string) {
         const der = Buffer.from(base64, 'base64');
         const asn1 = fromBER(new Uint8Array(der).buffer);
         return new pkijs.Certificate({ schema: asn1.result });
-    } catch (err) {
+    } catch {
         throw new Error('The certificate is not a valid PEM encoded X.509 certificate string');
     }
 }

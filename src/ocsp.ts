@@ -19,7 +19,9 @@ export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkij
 
     let nonce: ArrayBuffer | null = null;
     if (config.enableNonce) {
-        nonce = new OctetString({ valueHex: pkijs.getRandomValues(new Uint8Array(32)) }).toBER();
+        nonce = new OctetString({
+            valueHex: pkijs.getRandomValues(new Uint8Array(32)),
+        }).toBER();
         ocspReq.tbsRequest.requestExtensions = [
             new pkijs.Extension({
                 extnID: '1.3.6.1.5.5.7.48.1.2', // nonce
@@ -33,7 +35,10 @@ export async function buildOCSPRequest(cert: pkijs.Certificate, issuerCert: pkij
     };
 }
 
-type AccessDescription = { accessMethod: string; accessLocation: { type: number; value: string } };
+type AccessDescription = {
+    accessMethod: string;
+    accessLocation: { type: number; value: string };
+};
 
 export function getCAInfoUrls(cert: pkijs.Certificate) {
     if (!cert.extensions) {
@@ -216,7 +221,7 @@ async function verifySignature(
     }
 
     if (config.ocspCertificate) {
-        signatureCert = convertToPkijsCert(config.ocspCertificate)
+        signatureCert = convertToPkijsCert(config.ocspCertificate);
     } else if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
         if (trustedCert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
             signatureCert = trustedCert;

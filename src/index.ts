@@ -188,7 +188,12 @@ async function sendOCSPRequest(cert: string | Buffer | X509Certificate | pkijs.C
         throw new Error(`OCSP request failed with http status ${res.status} ${res.statusText}`);
     }
 
-    return { response: Buffer.from(await res.arrayBuffer()), certificate, issuerCertificate, nonce };
+    return {
+        response: Buffer.from(await res.arrayBuffer()),
+        certificate,
+        issuerCertificate,
+        nonce,
+    };
 }
 
 /**
@@ -224,7 +229,7 @@ export async function getCertStatusByDomain(domain: string, config?: OCSPStatusC
         try {
             const url = new URL(_domain);
             _domain = url.hostname;
-        } catch (e) {
+        } catch {
             throw new Error('Invalid URL');
         }
     }

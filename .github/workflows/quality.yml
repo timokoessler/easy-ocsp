@@ -1,20 +1,33 @@
 name: Code quality
 
 on:
-  push:
-    branches: ['main']
-  pull_request:
+    push:
+        branches:
+            - 'main'
+    pull_request:
 
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout repository ⬇️
-        uses: actions/checkout@v4
-      - name: Setup Biome ⚙️
-        uses: biomejs/setup-biome@v2
-        with:
-          version: latest
-      - name: Run Biome 🚀
-        run: biome ci .
+    quality:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Checkout repository ⬇️
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 22.x
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22.x
+                  cache: 'npm'
+
+            - name: Install dependencies 📦
+              run: npm ci
+
+            - name: Run linter
+              run: npm run lint
+
+            - name: Check formatting
+              run: npm run check:format
+
+            - name: Check types
+              run: npm run check:types
