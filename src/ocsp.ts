@@ -2,6 +2,7 @@ import { webcrypto } from 'node:crypto';
 import { Constructed, Enumerated, GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
 import type { OCSPStatusConfig, OCSPStatusResponse } from './index';
+import { convertToPkijsCert } from './convert';
 
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
@@ -214,7 +215,9 @@ async function verifySignature(
         throw new Error('No pkijs crypto engine');
     }
 
-    if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
+    if (config.ocspCertificate) {
+        signatureCert = convertToPkijsCert(config.ocspCertificate)
+    } else if (basicOcspResponse.tbsResponseData.responderID instanceof pkijs.RelativeDistinguishedNames) {
         if (trustedCert.subject.isEqual(basicOcspResponse.tbsResponseData.responderID)) {
             signatureCert = trustedCert;
         }
