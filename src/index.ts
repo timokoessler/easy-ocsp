@@ -17,6 +17,10 @@ export type OCSPStatusConfig = {
      */
     ocspUrl?: string;
     /**
+     * The OCSP responder certificate to validate the signature of the OCSP response. If not provided issuer certificate will be used.
+     */
+    ocspCertificate?: string | Buffer | X509Certificate | pkijs.Certificate;
+    /**
      * Whether to validate the signature of the OCSP response. This is enabled by default and should only be disabled for debugging purposes.
      * @defaultValue true
      */

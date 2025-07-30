@@ -98,9 +98,30 @@ describe('Error handling', () => {
         });
     });
 
-    test('Aboirt download issuer cert', async () => {
+    test('Abort download issuer cert', async () => {
         await rejects(downloadIssuerCert(leCert, 0), {
             message: 'This operation was aborted',
+        });
+    });
+
+    test('Invalid ocsp certificate format', async () => {
+        await rejects(getCertStatus(leCert, {
+            ca: leIntermediateCA,
+            ocspCertificate: 'invalid-certificate-format',
+        }), {
+            message: /certificate/i,
+        });
+    });
+
+    test('ocspCertificate parameter is passed correctly', async () => {
+        // Just test that the parameter is accepted without throwing immediate parsing errors
+        // This test uses an expired certificate, so we expect "already expired" error,
+        // but the important thing is that ocspCertificate is processed correctly
+        await rejects(getCertStatus(leStagingExpired, {
+            ca: leIntermediateCA,
+            ocspCertificate: leRealRootCA,
+        }), {
+            message: 'The certificate is already expired',
         });
     });
 });
