@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2025-08
+
+### Added
+
+- Allow passing a custom certificate for the OCSP response verification - Thanks @ArekDobosz
+- Export the `parseOCSPResponse` and `convertToPkijsCert` functions for advanced use cases - Thanks @Gldywn
+- All functions now accept raw certificates as `ArrayBuffer`
+
+### Changed
+
+- Better error messages on HTTP request failures
+- The unit tests are now using a selfhosted OCSP responder
+- Use a new linter and formatter
+- Update dependencies
+- Update issue templates
+
 ## [1.2.2] - 2025-04
 
 ### Changed
