@@ -16,7 +16,7 @@ const domains = [
     'www.globalsign.com',
     'www.godaddy.com',
     'www.rapidssl.com',
-    'www.entrust.com',
+    'https://www.entrust.com',
 ];
 
 describe('Get certificate status by domain', () => {
@@ -32,7 +32,7 @@ describe('Get certificate status by domain', () => {
     }
 
     test('Download cert should work as well', async () => {
-        const response = await getCertStatus(await downloadCert('timokoessler.de'));
+        const response = await getCertStatus(await downloadCert('example.com'));
         equal(response.status, 'good');
         equal(response.revocationTime, undefined);
         equal(response.producedAt instanceof Date, true);

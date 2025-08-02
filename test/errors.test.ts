@@ -1,21 +1,21 @@
 import { test, describe, before } from 'node:test';
-import { downloadIssuerCert, getCertStatus, getCertStatusByDomain, getCertURLs } from '../src';
+import { downloadIssuerCert, getCertStatus, getCertStatusByDomain, getCertURLs, downloadCert } from '../src';
 import { readCertFile } from './test-helper';
 import { rejects, throws } from 'node:assert';
 
-let leCert: string;
-let leIntermediateCA: string;
-let leRealRootCA: string;
-let selfSignedCert: string;
+let noOcspCert: string;
+let caCert: string;
+let validCert: string;
 let leStagingExpired: string;
+let leStagingRootCA: string;
 
 describe('Error handling', () => {
     before(async () => {
-        leCert = await readCertFile('le-staging-revoked');
-        leIntermediateCA = await readCertFile('le-staging-false-fennel-e6');
-        leRealRootCA = await readCertFile('le-isrg-root-x2');
-        selfSignedCert = await readCertFile('self-signed');
-        leStagingExpired = await readCertFile('le-staging-expired');
+        caCert = await readCertFile('0-cacert');
+        validCert = await readCertFile('02-valid');
+        noOcspCert = await readCertFile('self-signed-no-ocsp');
+        leStagingExpired = await readCertFile('letsencrypt-staging-expired');
+        leStagingRootCA = await readCertFile('letsencrypt-stg-root-x1');
     });
 
     test('Invalid PEM', async () => {
@@ -31,10 +31,33 @@ describe('Error handling', () => {
         });
     });
 
-    test('Wrong ca', async () => {
+    test('No authority information', () => {
+        throws(
+            () => {
+                getCertURLs(noOcspCert);
+            },
+            {
+                message: 'Certificate does not contain authority information access extension',
+            },
+        );
+    });
+
+    test('Use CA cert for OCSP signature verification', async () => {
         await rejects(
-            getCertStatus(leCert, {
-                ca: leRealRootCA,
+            getCertStatus(validCert, {
+                ca: caCert,
+                ocspCertificate: caCert,
+            }),
+            {
+                message: 'OCSP response signature verification failed',
+            },
+        );
+    });
+
+    test('Ask wrong ocsp server', async () => {
+        await rejects(
+            getCertStatus(validCert, {
+                ocspUrl: 'http://ocsp.digicert.com',
             }),
             {
                 message: 'OCSP server response: unauthorized',
@@ -44,42 +67,13 @@ describe('Error handling', () => {
 
     test('Wrong timeout', async () => {
         await rejects(
-            getCertStatus(leCert, {
+            getCertStatus(validCert, {
                 timeout: 0,
             }),
             {
-                message: 'This operation was aborted',
+                message: 'Failed to download issuer certificate: Operation timed out after 0ms',
             },
         );
-    });
-
-    test('No authority information', () => {
-        throws(
-            () => {
-                getCertURLs(selfSignedCert);
-            },
-            {
-                message: 'Certificate does not contain authority information access extension',
-            },
-        );
-    });
-
-    test('Wrong ocsp server', async () => {
-        await rejects(
-            getCertStatus(selfSignedCert, {
-                ocspUrl: 'http://stg-r3.o.lencr.org',
-                ca: leIntermediateCA,
-            }),
-            {
-                message: 'OCSP server response: unauthorized',
-            },
-        );
-    });
-
-    test('Expired certificate', async () => {
-        await rejects(getCertStatus(leStagingExpired), {
-            message: 'The certificate is already expired',
-        });
     });
 
     test('Invalid url', async () => {
@@ -95,41 +89,95 @@ describe('Error handling', () => {
     });
 
     test('Abort getCertStatus', async () => {
-        await rejects(getCertStatus(leCert, { timeout: 0 }), {
-            message: 'This operation was aborted',
+        await rejects(getCertStatus(validCert, { timeout: 0 }), {
+            message: 'Failed to download issuer certificate: Operation timed out after 0ms',
         });
     });
 
     test('Abort download issuer cert', async () => {
-        await rejects(downloadIssuerCert(leCert, 0), {
-            message: 'This operation was aborted',
+        await rejects(downloadIssuerCert(validCert, 0), {
+            message: 'Failed to download issuer certificate: Operation timed out after 0ms',
         });
     });
 
     test('Invalid ocsp certificate format', async () => {
         await rejects(
-            getCertStatus(leCert, {
-                ca: leIntermediateCA,
+            getCertStatus(validCert, {
                 ocspCertificate: 'invalid-certificate-format',
             }),
             {
-                message: /certificate/i,
+                message: 'The certificate is not a valid PEM encoded X.509 certificate string',
             },
         );
     });
 
-    test('ocspCertificate parameter is passed correctly', async () => {
-        // Just test that the parameter is accepted without throwing immediate parsing errors
-        // This test uses an expired certificate, so we expect "already expired" error,
-        // but the important thing is that ocspCertificate is processed correctly
+    test('Server sends unrecognized name error', async () => {
+        await rejects(downloadCert('no-cert-test.tkoessler.de'), {
+            message: /SSL alert number 112/,
+        });
+    });
+
+    test('Expired certificate', async () => {
+        await rejects(getCertStatus(leStagingExpired), {
+            message: 'The certificate is already expired',
+        });
+    });
+
+    test('Wrong ca', async () => {
         await rejects(
-            getCertStatus(leStagingExpired, {
-                ca: leIntermediateCA,
-                ocspCertificate: leRealRootCA,
+            getCertStatus(validCert, {
+                ca: leStagingRootCA,
             }),
             {
-                message: 'The certificate is already expired',
+                message: 'Validation of OCSP response certificate chain failed',
             },
         );
+    });
+
+    test('Set ocsp server to non-existing URL', async () => {
+        await rejects(
+            getCertStatus(validCert, {
+                ocspUrl: 'https://tkoessler.de/404-this-does-not-exist',
+            }),
+            {
+                message: 'OCSP request failed with http status 404 Not Found',
+            },
+        );
+    });
+
+    test('Download issuercert with invalid cert', async () => {
+        await rejects(downloadIssuerCert('--invalid-cert--'), {
+            message: 'The certificate is not a valid PEM encoded X.509 certificate string',
+        });
+    });
+
+    test('Valid cert without OCSP URL', async () => {
+        await rejects(getCertStatus(await readCertFile('06-valid-no-ocsp-url')), {
+            message: 'Certificate does not contain OCSP url',
+        });
+    });
+
+    test('Valid cert without Issuer URL', async () => {
+        await rejects(getCertStatus(await readCertFile('07-valid-no-issuer-url')), {
+            message: 'Certificate does not contain issuer url',
+        });
+    });
+
+    test('Valid cert with wrong Issuer URL', async () => {
+        await rejects(getCertStatus(await readCertFile('08-valid-wrong-issuer-url')), {
+            message: /Failed to download issuer certificate: fetch failed \(Error:/,
+        });
+    });
+
+    test('Valid cert with wrong Issuer URL 2', async () => {
+        await rejects(getCertStatus(await readCertFile('09-valid-wrong-issuer-url-02')), {
+            message: 'Issuer certificate download failed with status 404 Not Found https://timokoessler.de/404-not-exists',
+        });
+    });
+
+    test('Pass Pem encoded certificate as Buffer', async () => {
+        await rejects(getCertStatus(Buffer.from(validCert, 'ascii')), {
+            message: "Error during parsing of ASN.1 data. Data is not correct for 'Certificate'.",
+        });
     });
 });

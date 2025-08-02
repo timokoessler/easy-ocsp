@@ -2,7 +2,7 @@ import { webcrypto } from 'node:crypto';
 import { Constructed, Enumerated, GeneralizedTime, OctetString, UTCTime } from 'asn1js';
 import * as pkijs from 'pkijs';
 import type { OCSPStatusConfig, OCSPStatusResponse } from './index';
-import { convertToPkijsCert } from './convert';
+import { convertToPkijsCert, typedArrayToBuffer } from './convert';
 
 const cryptoEngine = new pkijs.CryptoEngine({
     crypto: webcrypto as Crypto,
@@ -40,7 +40,7 @@ type AccessDescription = {
     accessLocation: { type: number; value: string };
 };
 
-export function getCAInfoUrls(cert: pkijs.Certificate) {
+export function getCAInfoUrls(cert: pkijs.Certificate): { ocspUrl: string; issuerUrl: string } {
     if (!cert.extensions) {
         throw new Error('Certificate does not contain any extensions');
     }
@@ -71,13 +71,22 @@ export function getCAInfoUrls(cert: pkijs.Certificate) {
     };
 }
 
+/**
+ * Parse a raw OCSP response and return the status of the certificate.
+ * @param responseData The raw OCSP response data as a Buffer.
+ * @param certificate The certificate to check the status for.
+ * @param issuerCertificate The issuer certificate of the certificate to check.
+ * @param config Additional configuration options, see {@link OCSPStatusConfig}.
+ * @param nonce The nonce used in the OCSP request.
+ * @returns The parsed OCSP response.
+ */
 export async function parseOCSPResponse(
-    responseData: Buffer,
+    responseData: ArrayBuffer,
     certificate: pkijs.Certificate,
     issuerCertificate: pkijs.Certificate,
     config: OCSPStatusConfig,
     nonce: ArrayBuffer | null,
-) {
+): Promise<OCSPStatusResponse> {
     const ocspResponse = pkijs.OCSPResponse.fromBER(responseData);
 
     const responseCode = ocspResponse.responseStatus.valueBlock.valueDec;
@@ -106,7 +115,7 @@ export async function parseOCSPResponse(
         throw new Error('Unknown ocsp response type');
     }
 
-    const basicResponse = pkijs.BasicOCSPResponse.fromBER(ocspResponse.responseBytes.response.valueBlock.valueHexView);
+    const basicResponse = pkijs.BasicOCSPResponse.fromBER(typedArrayToBuffer(ocspResponse.responseBytes.response.valueBlock.valueHexView));
     if (!Array.isArray(basicResponse.tbsResponseData.responses)) {
         throw new Error('OCSP response does not contain any response data');
     }
@@ -161,6 +170,8 @@ export async function parseOCSPResponse(
     } else {
         if (singleResponse.certStatus.idBlock.tagNumber === 0) {
             status = 'good';
+        } else if (singleResponse.certStatus.idBlock.tagNumber !== 2) {
+            throw new Error(`OCSP response certStatus is not good, revoked or unknown: ${singleResponse.certStatus.idBlock.tagNumber}`);
         }
     }
 
@@ -201,7 +212,7 @@ export async function parseOCSPResponse(
     }
 
     if (config.rawResponse === true) {
-        result.rawResponse = responseData;
+        result.rawResponse = Buffer.from(responseData);
     }
 
     return result;
@@ -282,7 +293,7 @@ async function verifySignature(
     }
 
     return cryptoEngine.crypto.verifyWithPublicKey(
-        basicOcspResponse.tbsResponseData.tbsView,
+        typedArrayToBuffer(basicOcspResponse.tbsResponseData.tbsView),
         basicOcspResponse.signature,
         signatureCert.subjectPublicKeyInfo,
         basicOcspResponse.signatureAlgorithm,
