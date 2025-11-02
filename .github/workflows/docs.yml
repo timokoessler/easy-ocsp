@@ -34,7 +34,7 @@ jobs:
             - name: Install dependencies 📦
               run: npm ci
             - name: Generate docs 📚
-              run: npm run build:docs
+              run: node --run build:docs
             - name: Setup Pages 📄
               uses: actions/configure-pages@v5
             - name: Upload artifact ⬆️
