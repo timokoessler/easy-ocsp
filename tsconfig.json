@@ -2,7 +2,6 @@
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules/", "dist"],
     "compilerOptions": {
-        "baseUrl": "src",
         "allowSyntheticDefaultImports": true,
         "target": "ES2022",
         "moduleResolution": "Node",

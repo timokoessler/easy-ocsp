@@ -165,7 +165,7 @@ describe('Error handling', () => {
 
     test('Valid cert with wrong Issuer URL', async () => {
         await rejects(getCertStatus(await readCertFile('08-valid-wrong-issuer-url')), {
-            message: /Failed to download issuer certificate: fetch failed \(Error:/,
+            message: /Failed to download issuer certificate: fetch failed \(.*unrecognized name/,
         });
     });
 

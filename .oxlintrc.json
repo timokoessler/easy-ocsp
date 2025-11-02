@@ -22,7 +22,14 @@
         {
             "files": ["examples/**/*.ts"],
             "rules": {
-                "no-console": "off"
+                "no-console": "off",
+                "no-floating-promises": "off"
+            }
+        },
+        {
+            "files": ["**/*.test.ts"],
+            "rules": {
+                "no-floating-promises": "off"
             }
         }
     ]

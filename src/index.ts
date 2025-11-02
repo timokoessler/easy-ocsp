@@ -4,7 +4,7 @@ import { convertPkijsCertToPem, convertToPkijsCert } from './convert';
 import { buildOCSPRequest, getCAInfoUrls, parseOCSPResponse } from './ocsp';
 import { downloadCert } from './tls';
 import { OCSPStatusConfig, OCSPStatusResponse, OCSPRevocationReason } from './types';
-import { fetchWrapper } from 'fetchWrapper';
+import { fetchWrapper } from './fetchWrapper';
 
 /**
  * Function to download and parse the certificate of the issuer of a certificate

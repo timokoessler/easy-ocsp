@@ -24,7 +24,23 @@ export async function fetchWrapper(
             throw new Error(`${errorPrefix}: Operation timed out after ${timeout}ms`);
         }
 
-        throw new Error(`${errorPrefix}: ${error.message}${error.cause ? ` (${error.cause})` : ''}`);
+        let causeText = '';
+        if ('cause' in error && error.cause) {
+            if (typeof error.cause === 'string') {
+                causeText = error.cause;
+            } else if (error.cause instanceof Error) {
+                causeText = error.cause.message;
+            } else {
+                try {
+                    causeText = JSON.stringify(error.cause);
+                } catch {
+                    // oxlint-disable-next-line no-base-to-string
+                    causeText = String(error.cause);
+                }
+            }
+        }
+
+        throw new Error(`${errorPrefix}: ${error.message}${causeText ? ` (${causeText})` : ''}`);
     } finally {
         clearTimeout(timeoutId);
     }
