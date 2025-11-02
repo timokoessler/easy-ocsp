@@ -1,4 +1,4 @@
-name: Publish Package to npm
+name: 🚀 Publish Package to npm
 on:
     release:
         types: [created]
@@ -10,11 +10,11 @@ jobs:
             id-token: write
         steps:
             - name: Checkout repository ⬇️
-              uses: actions/checkout@v4
-            - name: Setup Node.js 22 ⚙️
-              uses: actions/setup-node@v4
+              uses: actions/checkout@v5
+            - name: Setup Node.js 24 ⚙️
+              uses: actions/setup-node@v6
               with:
-                  node-version: 22.x
+                  node-version: 24.x
                   cache: 'npm'
                   registry-url: 'https://registry.npmjs.org'
             - name: Ensure latest npm version 📦
