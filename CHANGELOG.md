@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2025-12
+
+### Changed
+
+- Bump minimum recommended Node.js version to 18.13.0
+- Use npm trusted publishing to enhance security
+- Update dependencies
+- Fixes security vulnerability in dev dependencies
+
 ## [1.3.0] - 2025-08
 
 ### Added
