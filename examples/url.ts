@@ -12,7 +12,7 @@ import { getCertStatusByDomain } from '../dist';
                 console.warn('Certificate status is unknown');
                 break;
             case 'revoked':
-                console.log(`Certificate was revoked at ${ocspResult.revocationTime}`);
+                console.log(`Certificate was revoked at ${ocspResult.revocationTime?.toISOString()}`);
                 if (ocspResult.revocationReason) {
                     console.log(`Revocation reason: ${ocspResult.revocationReason}`);
                 }

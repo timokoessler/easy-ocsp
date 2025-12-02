@@ -43,7 +43,7 @@ MPea67E7SY5zIULkNkaGx0TeijsyGFS4gfXGH4wIcoaO580N
                 console.warn('Certificate status is unknown');
                 break;
             case 'revoked':
-                console.log(`Certificate was revoked at ${ocspResult.revocationTime}`);
+                console.log(`Certificate was revoked at ${ocspResult.revocationTime?.toISOString()}`);
                 if (ocspResult.revocationReason) {
                     console.log(`Revocation reason: ${ocspResult.revocationReason}`);
                 }
