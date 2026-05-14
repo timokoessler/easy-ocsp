@@ -4,13 +4,15 @@
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
         "target": "ES2022",
-        "moduleResolution": "Node",
+        "moduleResolution": "bundler",
         "outDir": "dist",
+        "rootDir": ".",
         "declaration": true,
         "esModuleInterop": true,
         "strict": true,
         "allowJs": false,
         "resolveJsonModule": true,
-        "inlineSourceMap": false
+        "inlineSourceMap": false,
+        "skipLibCheck": true
     }
 }
