@@ -12,6 +12,6 @@ docs/
 typedoc.json
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
-.prettierrc.mjs
+.oxfmtrc.json
 .oxlintrc.json
 .npmrc

@@ -15,11 +15,11 @@
         "test": "node --import tsx --test --test-concurrency 4 test/**/*.test.ts",
         "test:cov": "c8 -r lcov -r text --include src/**/*.ts node --import tsx --test --test-concurrency 4 test/**/*.test.ts",
         "lint": "oxlint --deny-warnings --type-aware",
-        "format": "prettier --write .",
+        "format": "oxfmt --write .",
         "build": "tsup",
         "build:docs": "typedoc --skipErrorChecking",
         "check:types": "tsc --noEmit",
-        "check:format": "prettier --check ."
+        "check:format": "oxfmt --check ."
     },
     "repository": {
         "type": "git",
@@ -43,9 +43,9 @@
     "devDependencies": {
         "@types/node": "^24.12.4",
         "c8": "^11.0.0",
+        "oxfmt": "^0.51.0",
         "oxlint": "^1.9.0",
         "oxlint-tsgolint": "^0.23.0",
-        "prettier": "^3.6.2",
         "tsup": "^8.0.1",
         "tsx": "^4.19.2",
         "typedoc": "^0.28.2",
