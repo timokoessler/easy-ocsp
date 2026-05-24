@@ -1,0 +1,64 @@
+name: Security
+
+on:
+    push:
+        branches:
+            - 'main'
+    pull_request:
+    schedule:
+        - cron: '42 5 * * 2' # Every Tuesday at 5:42am
+
+permissions: {}
+
+jobs:
+    zizmor:
+        name: Check GitHub Actions
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            security-events: write # Required to upload results as security events
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+              with:
+                  persist-credentials: false
+
+            - name: Run zizmor
+              uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
+
+    codeql:
+        name: CodeQL (${{ matrix.language }})
+        runs-on: 'ubuntu-latest'
+        permissions:
+            security-events: write
+            packages: read
+            actions: read
+            contents: read
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - language: actions
+                      build-mode: none
+                    - language: javascript-typescript
+                      build-mode: none
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+              with:
+                  persist-credentials: false
+
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+              with:
+                  languages: ${{ matrix.language }}
+                  build-mode: ${{ matrix.build-mode }}
+                  queries: security-and-quality
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+              with:
+                  category: '/language:${{matrix.language}}'

@@ -44,7 +44,7 @@
         "@types/node": "^24.12.4",
         "c8": "^11.0.0",
         "oxlint": "^1.9.0",
-        "oxlint-tsgolint": "^0.22.1",
+        "oxlint-tsgolint": "^0.23.0",
         "prettier": "^3.6.2",
         "tsup": "^8.0.1",
         "tsx": "^4.19.2",
