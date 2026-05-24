@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.2] - 2026-05
+
+### Changed
+
+- Use npm staged publishing to enhance security
+- Harden GitHub Actions and add additional security scanning
+- Update dependencies & switch formatter to oxfmt
+
 ## [1.3.1] - 2025-12
 
 ### Changed
