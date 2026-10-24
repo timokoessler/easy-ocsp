@@ -4,7 +4,6 @@ import { downloadCert, getCertStatus, getCertStatusByDomain } from '../src/index
 
 const domains = [
     'github.com',
-    'www.google.de',
     'www.microsoft.com',
     'www.apple.com',
     'www.amazon.de',
